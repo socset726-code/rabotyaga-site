@@ -2691,6 +2691,8 @@ function licHandle(ok, body, code, err)
 end
 
 function licTick()
+    local okE, errE = pcall(extTick)
+    if not okE and not EXT_ERRSHOWN then EXT_ERRSHOWN = true print('extTick: ' .. tostring(errE)) end
     updTick()
     if LIC.th then
         local okS, st = pcall(function() return LIC.th:status() end)
@@ -2943,6 +2945,332 @@ function updTick()
     end
 end
 -- UPD_BLOCK_END
+-- EXT_BLOCK_BEGIN
+-- ================================================================
+-- ДОП. ФУНКЦИИ: горячая клавиша, случайные паузы, вариативность движения, ответ админу.
+-- Настройки: команда /rmext (окно), файл moonloader/config/rabotyaga_ext.ini.
+-- Горячая клавиша бесплатна. Паузы, вариативность и ответ админу работают только с подпиской Про.
+-- ================================================================
+EXT_INI = "rabotyaga_ext.ini"
+EXT_DEFAULT = {
+    main = {hotkey = 0x76, hotkeyOn = true},
+    rnd = {pauseOn = false, pauseEvery1 = 60, pauseEvery2 = 240, pause1 = 2, pause2 = 8, varOn = false},
+    adm = {
+        on = false,
+        reply = "да я тут",
+        prefix = "/b",
+        delay1 = 2,
+        delay2 = 5,
+        stop = true,
+        notify = true,
+        respondDialog = true,
+        markers = "дмин;admin",
+        extra = "вы тут;вы здесь;на месте;отзовитесь;ответьте;афк;бот",
+    },
+}
+EXT = {
+    cfg = nil, win = imgui.new.bool(false), capture = false, ui = nil, dirty = false, cmdOk = false, frameOk = false,
+    nextPause = 0, resumeAt = 0, pausedByUs = false, adminStopped = false, lastAdm = -100,
+    nextStrafe = 0, strafeUntil = nil, strafeDir = 1, nextWalk = 0, walkUntil = nil,
+    nextRcd = 0, baseRcd = nil, lastRcd = nil, varWas = false,
+}
+
+function extRand(a, b)
+    a = tonumber(a) or 0
+    b = tonumber(b) or a
+    if b < a then b = a end
+    return a + math.random() * (b - a)
+end
+
+-- нижний регистр с учётом русских букв CP1251
+function extLow(s)
+    s = tostring(s or "")
+    s = s:gsub("[\192-\223]", function(c) return string.char(c:byte() + 32) end)
+    s = s:gsub("\168", "\184")
+    return s:lower()
+end
+
+function extHas(lowText, list)
+    for raw in tostring(list or ""):gmatch("[^;]+") do
+        local kw = extLow(raw):gsub("^%s+", ""):gsub("%s+$", "")
+        if kw ~= "" and lowText:find(kw, 1, true) then return true end
+    end
+    return false
+end
+
+function extLog(msg)
+    pcall(function()
+        local f = io.open(getWorkingDirectory() .. "\\config\\rabotyaga_ext.log", "ab")
+        if f then f:write(os.date("%d.%m.%Y %H:%M:%S "), tostring(msg), "\r\n") f:close() end
+    end)
+end
+
+function extSay(msg)
+    pcall(function() sampAddChatMessage("{cc66ff}[rabotyaga]: {ffffff}" .. msg, -1) end)
+end
+
+function extSave()
+    if EXT.cfg then pcall(inicfg.save, EXT.cfg, EXT_INI) end
+    EXT.dirty = false
+end
+
+function extSetMode(v, silentTg)
+    mode = v
+    if silentTg and TG then TG.lastMode = v end
+end
+
+-- ---------- распознавание админа ----------
+function extAdminTrigger(kind, text, dlg)
+    local a = EXT.cfg and EXT.cfg.adm
+    if not a or not a.on or not licPro() then return end
+    if os.clock() - EXT.lastAdm < 30 then return end
+    EXT.lastAdm = os.clock()
+    extLog(kind .. ": " .. tostring(text))
+    EXT.pausedByUs = false
+    EXT.adminStopped = true
+    if a.stop then mode = false end
+    extSay("Похоже, обращается администратор. " .. (a.stop and "Бот остановлен, отвечаю." or "Отвечаю."))
+    if a.notify and tgNotifyAdmin then pcall(tgNotifyAdmin, text) end
+    local reply = tostring(a.reply or "")
+    local prefix = tostring(a.prefix or "")
+    lua_thread.create(function()
+        wait(math.floor(extRand(a.delay1, a.delay2) * 1000))
+        if reply == "" then return end
+        if kind == "dialog" and dlg then
+            if dlg.style == 1 or dlg.style == 3 then
+                pcall(sampSendDialogResponse, dlg.id, 1, 0, reply)
+            else
+                pcall(sampSendDialogResponse, dlg.id, 1, 0, "")
+                pcall(sampSendChat, prefix ~= "" and (prefix .. " " .. reply) or reply)
+            end
+            pcall(sampCloseCurrentDialogWithButton, 1)
+        else
+            pcall(sampSendChat, prefix ~= "" and (prefix .. " " .. reply) or reply)
+        end
+    end)
+end
+
+function extOnServerMessage(color, text)
+    local a = EXT.cfg and EXT.cfg.adm
+    if not a or not a.on or type(text) ~= "string" then return end
+    local clean = text:gsub("{%x%x%x%x%x%x}", "")
+    local t = extLow(clean)
+    if not extHas(t, a.markers) then return end
+    local ok, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
+    if not ok then return end
+    local nick = extLow(sampGetPlayerNickname(id) or "")
+    if (nick ~= "" and t:find(nick, 1, true)) or t:find("%[" .. id .. "%]") then
+        extAdminTrigger("chat", clean:sub(1, 300))
+    end
+end
+
+function extOnDialog(id, style, title, text)
+    local a = EXT.cfg and EXT.cfg.adm
+    if not a or not a.on or not a.respondDialog then return end
+    local full = tostring(title or "") .. " " .. tostring(text or "")
+    full = full:gsub("{%x%x%x%x%x%x}", "")
+    local t = extLow(full)
+    if not extHas(t, a.markers) then return end
+    if not (t:find("?", 1, true) or extHas(t, a.extra)) then return end
+    extAdminTrigger("dialog", full:sub(1, 300), {id = id, style = style})
+end
+
+function sampev.onShowDialog(id, style, title, b1, b2, text)
+    pcall(extOnDialog, id, style, title, text)
+end
+
+-- ---------- окно настроек ----------
+function extKeyName(k)
+    local ok, v = pcall(function() return require('vkeys').id_to_name(k) end)
+    if ok and v then return tostring(v) end
+    return "0x" .. string.format("%X", k)
+end
+
+function extBuildUi()
+    local c = EXT.cfg
+    EXT.ui = {
+        hotOn = imgui.new.bool(c.main.hotkeyOn),
+        pauseOn = imgui.new.bool(c.rnd.pauseOn), varOn = imgui.new.bool(c.rnd.varOn),
+        e1 = imgui.new.int(c.rnd.pauseEvery1), e2 = imgui.new.int(c.rnd.pauseEvery2),
+        p1 = imgui.new.int(c.rnd.pause1), p2 = imgui.new.int(c.rnd.pause2),
+        admOn = imgui.new.bool(c.adm.on), stop = imgui.new.bool(c.adm.stop), notify = imgui.new.bool(c.adm.notify),
+        dlg = imgui.new.bool(c.adm.respondDialog),
+        d1 = imgui.new.int(c.adm.delay1), d2 = imgui.new.int(c.adm.delay2),
+        reply = imgui.new.char[128](u8(tostring(c.adm.reply))),
+        prefix = imgui.new.char[16](tostring(c.adm.prefix)),
+        markers = imgui.new.char[160](u8(tostring(c.adm.markers))),
+        extra = imgui.new.char[256](u8(tostring(c.adm.extra))),
+    }
+end
+
+function extDrawWindow()
+    local c, ui = EXT.cfg, EXT.ui
+    if not c or not ui then return end
+    imgui.SetNextWindowSize(imgui.ImVec2(460, 0), imgui.Cond.FirstUseEver)
+    if imgui.Begin(u8"Rabotyaga: доп. функции##ext", EXT.win, imgui.WindowFlags.AlwaysAutoResize) then
+        local ch = false
+        imgui.Text(u8"Горячая клавиша включения/выключения бота")
+        if imgui.Checkbox(u8"Включена##hot", ui.hotOn) then c.main.hotkeyOn = ui.hotOn[0] ch = true end
+        imgui.SameLine()
+        if EXT.capture then
+            imgui.Text(u8"нажмите клавишу (Esc отмена)")
+        else
+            if imgui.Button(extKeyName(c.main.hotkey) .. u8"  (сменить)##hk") then EXT.capture = true end
+        end
+        imgui.Separator()
+        if not licPro() then
+            imgui.TextColored(imgui.ImVec4(1, 0.6, 0.2, 1), u8"Ниже: функции подписки Про")
+        end
+        imgui.Text(u8"Случайные паузы")
+        if imgui.Checkbox(u8"Делать короткие паузы на маршруте", ui.pauseOn) then c.rnd.pauseOn = ui.pauseOn[0] ch = true end
+        if imgui.SliderInt(u8"Раз в (от), сек##e1", ui.e1, 20, 900) then c.rnd.pauseEvery1 = ui.e1[0] ch = true end
+        if imgui.SliderInt(u8"Раз в (до), сек##e2", ui.e2, 20, 900) then c.rnd.pauseEvery2 = ui.e2[0] ch = true end
+        if imgui.SliderInt(u8"Пауза (от), сек##p1", ui.p1, 1, 30) then c.rnd.pause1 = ui.p1[0] ch = true end
+        if imgui.SliderInt(u8"Пауза (до), сек##p2", ui.p2, 1, 30) then c.rnd.pause2 = ui.p2[0] ch = true end
+        imgui.Separator()
+        imgui.Text(u8"Вариативность движения")
+        if imgui.Checkbox(u8"Случайные шаги вбок, замедление, разброс точек", ui.varOn) then c.rnd.varOn = ui.varOn[0] ch = true end
+        imgui.Separator()
+        imgui.Text(u8"Ответ администратору")
+        if imgui.Checkbox(u8"Отвечать админу и останавливать бота", ui.admOn) then c.adm.on = ui.admOn[0] ch = true end
+        if imgui.Checkbox(u8"Останавливать бота##stop", ui.stop) then c.adm.stop = ui.stop[0] ch = true end
+        if imgui.Checkbox(u8"Отвечать на окна (диалоги)", ui.dlg) then c.adm.respondDialog = ui.dlg[0] ch = true end
+        if imgui.Checkbox(u8"Сообщать в Telegram##nt", ui.notify) then c.adm.notify = ui.notify[0] ch = true end
+        if imgui.InputText(u8"Ответ", ui.reply, ffi.sizeof(ui.reply)) then c.adm.reply = u8:decode(ffi.string(ui.reply)) ch = true end
+        if imgui.InputText(u8"Команда чата (/b)", ui.prefix, ffi.sizeof(ui.prefix)) then c.adm.prefix = ffi.string(ui.prefix) ch = true end
+        if imgui.SliderInt(u8"Задержка ответа (от), сек##d1", ui.d1, 1, 20) then c.adm.delay1 = ui.d1[0] ch = true end
+        if imgui.SliderInt(u8"Задержка ответа (до), сек##d2", ui.d2, 1, 30) then c.adm.delay2 = ui.d2[0] ch = true end
+        if imgui.InputText(u8"Слова админа (через ;)", ui.markers, ffi.sizeof(ui.markers)) then c.adm.markers = u8:decode(ffi.string(ui.markers)) ch = true end
+        if imgui.InputText(u8"Фразы в окнах (через ;)", ui.extra, ffi.sizeof(ui.extra)) then c.adm.extra = u8:decode(ffi.string(ui.extra)) ch = true end
+        imgui.TextWrapped(u8"В чате реагирует на сообщение со словом админа и вашим ником или [ID]. В окнах: слово админа и вопрос или фраза. Журнал: moonloader/config/rabotyaga_ext.log")
+        if ch then EXT.dirty = true end
+        if EXT.dirty and not isKeyDown(0x01) then extSave() end
+    end
+    imgui.End()
+end
+
+function extInit()
+    if not EXT.cfg then
+        EXT.cfg = inicfg.load(EXT_DEFAULT, EXT_INI)
+        extSave()
+        extBuildUi()
+    end
+    if not EXT.frameOk then
+        EXT.frameOk = true
+        EXT.frame = imgui.OnFrame(function() return EXT.win[0] end, function(player)
+            player.HideCursor = false
+            extDrawWindow()
+        end)
+    end
+    if not EXT.cmdOk then
+        EXT.cmdOk = pcall(function()
+            sampRegisterChatCommand("rmext", function() EXT.win[0] = not EXT.win[0] end)
+        end)
+    end
+end
+
+-- ---------- основной тик (каждый кадр) ----------
+function extTick()
+    if not EXT.cfg or not EXT.frameOk or not EXT.cmdOk then extInit() end
+    local c = EXT.cfg
+    if not c then return end
+    local now = os.clock()
+
+    -- назначение клавиши
+    if EXT.capture then
+        for k = 8, 254 do
+            if k ~= 1 and k ~= 2 and k ~= 4 and k ~= 5 and k ~= 6 and isKeyJustPressed(k) then
+                if k ~= 0x1B then
+                    c.main.hotkey = k
+                    extSave()
+                end
+                EXT.capture = false
+                break
+            end
+        end
+    elseif c.main.hotkeyOn and isKeyJustPressed(c.main.hotkey) then
+        local typing = false
+        pcall(function() typing = sampIsChatInputActive() or sampIsDialogActive() or imgui.GetIO().WantTextInput end)
+        if not typing then
+            mode = not mode
+            EXT.pausedByUs = false
+            EXT.adminStopped = false
+            extSay("Бот " .. (mode and "включён" or "выключен"))
+        end
+    end
+
+    if mode then EXT.adminStopped = false end
+    local pro = licPro()
+
+    -- случайные паузы
+    if EXT.pausedByUs then
+        if mode then
+            EXT.pausedByUs = false
+        elseif now >= EXT.resumeAt then
+            EXT.pausedByUs = false
+            if not EXT.adminStopped then extSetMode(true, true) end
+        end
+    elseif c.rnd.pauseOn and pro and mode and not isAfk and BOT.kind == "route" then
+        if EXT.nextPause == 0 then EXT.nextPause = now + extRand(c.rnd.pauseEvery1, c.rnd.pauseEvery2) end
+        if now >= EXT.nextPause then
+            EXT.pausedByUs = true
+            EXT.resumeAt = now + extRand(c.rnd.pause1, c.rnd.pause2)
+            EXT.nextPause = EXT.resumeAt + extRand(c.rnd.pauseEvery1, c.rnd.pauseEvery2)
+            extSetMode(false, true)
+        end
+    elseif not c.rnd.pauseOn then
+        EXT.nextPause = 0
+    end
+
+    -- вариативность движения
+    if c.rnd.varOn and pro and mode and not isAfk and not EXT.pausedByUs then
+        EXT.varWas = true
+        if now >= EXT.nextRcd then
+            if EXT.lastRcd and routeCheckDistance ~= EXT.lastRcd then EXT.baseRcd = routeCheckDistance end
+            EXT.baseRcd = EXT.baseRcd or routeCheckDistance
+            local v = EXT.baseRcd + extRand(-0.6, 0.9)
+            if v < 1.5 then v = 1.5 end
+            routeCheckDistance = v
+            EXT.lastRcd = v
+            EXT.nextRcd = now + extRand(12, 40)
+        end
+        if EXT.walkUntil then
+            if now >= EXT.walkUntil then
+                sprint = true
+                EXT.walkUntil = nil
+                EXT.nextWalk = now + extRand(40, 120)
+            end
+        elseif sprint and BOT.kind == "route" then
+            if EXT.nextWalk == 0 then EXT.nextWalk = now + extRand(40, 120) end
+            if now >= EXT.nextWalk then
+                sprint = false
+                EXT.walkUntil = now + extRand(1.5, 4)
+            end
+        end
+        if EXT.strafeUntil then
+            if now < EXT.strafeUntil and BOT.kind == "route" then
+                setGameKeyState(0, EXT.strafeDir * 255)
+            else
+                EXT.strafeUntil = nil
+            end
+        elseif BOT.kind == "route" then
+            if EXT.nextStrafe == 0 then EXT.nextStrafe = now + extRand(8, 25) end
+            if now >= EXT.nextStrafe then
+                EXT.strafeDir = (math.random(0, 1) == 0) and -1 or 1
+                EXT.strafeUntil = now + extRand(0.12, 0.3)
+                EXT.nextStrafe = now + extRand(8, 25)
+            end
+        end
+    elseif EXT.varWas then
+        EXT.varWas = false
+        if EXT.walkUntil then sprint = true EXT.walkUntil = nil end
+        if EXT.lastRcd and routeCheckDistance == EXT.lastRcd and EXT.baseRcd then routeCheckDistance = EXT.baseRcd end
+        EXT.lastRcd = nil
+        EXT.strafeUntil = nil
+        EXT.nextWalk, EXT.nextStrafe, EXT.nextRcd = 0, 0, 0
+    end
+end
+-- EXT_BLOCK_END
 -- LIC_BLOCK_END
 
 -- NAV_BLOCK_BEGIN
@@ -3530,6 +3858,7 @@ local function autoJumpThread()
 end
 
 function sampev.onServerMessage(color, text)
+    pcall(extOnServerMessage, color, text)
     if text:find('Администратор') then
         sampAddChatMessage('{ff3333}[rabotyaga]: {ffffff}Внимание, администратор в игре!', -1)
         tgNotifyAdmin(text)
