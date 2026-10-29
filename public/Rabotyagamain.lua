@@ -4324,6 +4324,936 @@ function main()
     end
 end
 
+-- TH_ENGINE_BEGIN
+-- ================================================================
+-- Движок оформления: темы (стили, фон-картинка), библиотека, экспорт/импорт.
+-- Всё в глобальной таблице TH (лимит локальных переменных Lua).
+-- Файл темы *.rmtheme - обычный текст, он НЕ исполняется как код, поэтому безопасен для обмена.
+-- Картинка может быть вшита в файл темы (base64), тогда тема - один файл.
+-- ================================================================
+TH = {
+    MAX_IMG = 4 * 1024 * 1024,
+    DIR = getWorkingDirectory() .. "\\config\\rabotyaga_themes\\",
+    cur = nil, curKey = "", list = nil,
+    dirty = false, tex = {}, texCount = 0,
+    msg = nil, msgOk = true,
+}
+
+TH.FIELDS = {
+    {"name", "str"}, {"author", "str"},
+    {"accent", "rgb"}, {"accent2", "rgb"}, {"text", "rgb"}, {"textDim", "rgb"},
+    {"panel", "rgb"}, {"borderColor", "rgb"},
+    {"bgType", "enum", {glass = true, solid = true, gradient = true, image = true}},
+    {"c1", "rgba"}, {"c2", "rgba"}, {"c3", "rgba"}, {"c4", "rgba"},
+    {"blobs", "num", 0, 3},
+    {"pattern", "enum", {none = true, grid = true, dots = true, diag = true, scan = true}},
+    {"patternAlpha", "num", 0, 0.5}, {"patternSize", "num", 12, 80},
+    {"imgFit", "enum", {cover = true, stretch = true}},
+    {"imgDim", "num", 0, 1}, {"imgDrift", "num", 0, 1},
+    {"rounding", "num", 0, 32}, {"childRound", "num", 0, 28}, {"frameRound", "num", 0, 20},
+    {"borderAlpha", "num", 0, 1}, {"borderWidth", "num", 0, 4},
+    {"gloss", "num", 0, 1}, {"glow", "num", 0, 1},
+    {"panelAlpha", "num", 0, 0.9}, {"frameAlpha", "num", 0, 0.9}, {"btnAlpha", "num", 0, 0.9},
+    {"frameBorder", "bool"},
+    {"tab", "enum", {pill = true, bar = true, underline = true, fill = true, none = true}},
+}
+TH.FMAP = {}
+for _, f in ipairs(TH.FIELDS) do TH.FMAP[f[1]] = f end
+
+TH.ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+TH.B64REV = {}
+TH.B64CODE = {}
+for i = 0, 63 do
+    TH.B64REV[TH.ALPHA:byte(i + 1)] = i
+    TH.B64CODE[i] = TH.ALPHA:byte(i + 1)
+end
+
+-- ---------------- базовые утилиты ----------------
+function TH.clamp(v, a, b)
+    if v < a then return a elseif v > b then return b end
+    return v
+end
+
+function TH.copy(T)
+    local o = {}
+    for k, v in pairs(T) do
+        if type(k) == "string" and k:sub(1, 1) ~= "_" then
+            if type(v) == "table" then
+                local t = {}
+                for i, x in ipairs(v) do t[i] = x end
+                o[k] = t
+            else
+                o[k] = v
+            end
+        end
+    end
+    return o
+end
+
+function TH.say(ok, text)
+    TH.msgOk = ok
+    TH.msg = text
+end
+
+function TH.exists(rel)
+    return doesFileExist(TH.DIR .. rel)
+end
+
+function TH.writeFile(rel, text)
+    local f = io.open(TH.DIR .. rel, "wb")
+    if not f then return false end
+    f:write(text)
+    f:close()
+    return true
+end
+
+function TH.safeRel(v)
+    if type(v) ~= "string" or v:find("..", 1, true) then return false end
+    local dir = v:match("^([%w_]+)\\[%w_%-%.]+$")
+    return dir == "bg" or dir == "cache"
+end
+
+function TH.listDir(sub, mask)
+    local res = {}
+    pcall(function()
+        local h, name = findFirstFile(TH.DIR .. sub .. mask)
+        if not h then return end
+        while name do
+            if name ~= "." and name ~= ".." then res[#res + 1] = name end
+            name = findNextFile(h)
+        end
+        findClose(h)
+    end)
+    table.sort(res, function(a, b) return a:lower() < b:lower() end)
+    return res
+end
+
+function TH.openFolder()
+    pcall(function()
+        pcall(ffi.cdef, "void* ShellExecuteA(void*, const char*, const char*, const char*, const char*, int);")
+        ffi.load("shell32").ShellExecuteA(nil, "open", TH.DIR, nil, nil, 1)
+    end)
+end
+
+-- ---------------- base64 / картинки ----------------
+function TH.b64enc(s)
+    local code = TH.B64CODE
+    local out, buf, n = {}, {}, 0
+    local unpack = unpack or table.unpack
+    local char, floor = string.char, math.floor
+    local len = #s
+    local i = 1
+    while i + 2 <= len do
+        local a, b, c = s:byte(i, i + 2)
+        local v = a * 65536 + b * 256 + c
+        buf[n + 1] = code[floor(v / 262144)]
+        buf[n + 2] = code[floor(v / 4096) % 64]
+        buf[n + 3] = code[floor(v / 64) % 64]
+        buf[n + 4] = code[v % 64]
+        n = n + 4
+        if n >= 3996 then out[#out + 1] = char(unpack(buf, 1, n)); n = 0 end
+        i = i + 3
+    end
+    local rem = len - i + 1
+    if rem == 1 then
+        local v = s:byte(i) * 65536
+        buf[n + 1] = code[floor(v / 262144)]
+        buf[n + 2] = code[floor(v / 4096) % 64]
+        buf[n + 3] = 61
+        buf[n + 4] = 61
+        n = n + 4
+    elseif rem == 2 then
+        local a, b = s:byte(i, i + 1)
+        local v = a * 65536 + b * 256
+        buf[n + 1] = code[floor(v / 262144)]
+        buf[n + 2] = code[floor(v / 4096) % 64]
+        buf[n + 3] = code[floor(v / 64) % 64]
+        buf[n + 4] = 61
+        n = n + 4
+    end
+    if n > 0 then out[#out + 1] = char(unpack(buf, 1, n)) end
+    local joined = table.concat(out)
+    return (joined:gsub(string.rep(".", 76), "%0\n"))
+end
+
+function TH.b64dec(s)
+    local rev = TH.B64REV
+    s = s:gsub("[^%w%+/]", "")
+    local len = #s
+    local out, buf, n = {}, {}, 0
+    local unpack = unpack or table.unpack
+    local char, floor = string.char, math.floor
+    local i = 1
+    while i + 3 <= len do
+        local a, b, c, d = s:byte(i, i + 3)
+        local v = rev[a] * 262144 + rev[b] * 4096 + rev[c] * 64 + rev[d]
+        buf[n + 1] = floor(v / 65536)
+        buf[n + 2] = floor(v / 256) % 256
+        buf[n + 3] = v % 256
+        n = n + 3
+        if n >= 3999 then out[#out + 1] = char(unpack(buf, 1, n)); n = 0 end
+        i = i + 4
+    end
+    local rem = len - i + 1
+    if rem == 2 then
+        local v = rev[s:byte(i)] * 64 + rev[s:byte(i + 1)]
+        buf[n + 1] = floor(v / 16)
+        n = n + 1
+    elseif rem == 3 then
+        local v = rev[s:byte(i)] * 4096 + rev[s:byte(i + 1)] * 64 + rev[s:byte(i + 2)]
+        buf[n + 1] = floor(v / 1024)
+        buf[n + 2] = floor(v / 4) % 256
+        n = n + 2
+    end
+    if n > 0 then out[#out + 1] = char(unpack(buf, 1, n)) end
+    return table.concat(out)
+end
+
+function TH.hash(s)
+    local a, b = 1, 0
+    for i = 1, #s do
+        a = (a + s:byte(i)) % 65521
+        b = (b + a) % 65521
+    end
+    return string.format("%04x%04x%x", b, a, #s)
+end
+
+function TH.imgKind(s)
+    if type(s) ~= "string" then return nil end
+    if s:sub(1, 4) == "\137PNG" then return "png" end
+    if s:sub(1, 3) == "\255\216\255" then return "jpg" end
+    if s:sub(1, 2) == "BM" then return "bmp" end
+    return nil
+end
+
+function TH.imgSize(s)
+    if not s then return nil end
+    local function be16(i)
+        local a, b = s:byte(i, i + 1)
+        if not b then return nil end
+        return a * 256 + b
+    end
+    local function be32(i)
+        local a, b, c, d = s:byte(i, i + 3)
+        if not d then return nil end
+        return ((a * 256 + b) * 256 + c) * 256 + d
+    end
+    local function le32(i)
+        local a, b, c, d = s:byte(i, i + 3)
+        if not d then return nil end
+        return ((d * 256 + c) * 256 + b) * 256 + a
+    end
+    if s:sub(1, 4) == "\137PNG" then
+        return be32(17), be32(21)
+    elseif s:sub(1, 2) == "BM" then
+        local w, h = le32(19), le32(23)
+        if h and h > 2147483647 then h = 4294967296 - h end
+        return w, h
+    elseif s:sub(1, 2) == "\255\216" then
+        local i, n = 3, #s
+        while i + 9 <= n do
+            if s:byte(i) ~= 255 then
+                i = i + 1
+            else
+                local m = s:byte(i + 1)
+                if m == 255 then
+                    i = i + 1
+                elseif m >= 0xC0 and m <= 0xCF and m ~= 0xC4 and m ~= 0xC8 and m ~= 0xCC then
+                    return be16(i + 7), be16(i + 5)
+                elseif m == 0 or m == 0x01 or (m >= 0xD0 and m <= 0xD8) then
+                    i = i + 2
+                else
+                    local len = be16(i + 2)
+                    if not len or len < 2 then return nil end
+                    i = i + 2 + len
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- сохранить байты картинки в папку sub (bg или cache); возвращает относительный путь
+function TH.storeImage(data, sub, prefix)
+    local kind = TH.imgKind(data)
+    if not kind then return nil, u8"Это не PNG/JPG/BMP картинка" end
+    if #data > TH.MAX_IMG then
+        return nil, u8"Картинка больше 4 МБ. Сожмите её (например в JPG) и повторите"
+    end
+    local rel = sub .. "\\" .. (prefix or "") .. TH.hash(data) .. "." .. kind
+    if not TH.exists(rel) then
+        if not TH.writeFile(rel, data) then return nil, u8"Не удалось записать картинку в папку тем" end
+    end
+    return rel
+end
+
+-- достать вшитую картинку из текста темы
+function TH.extract(text)
+    local pos = text:find("[image]", 1, true)
+    if not pos then return nil end
+    local rest = text:sub(pos + 7)
+    local ext, body = rest:match("^%s*ext=(%w+)%s*(.*)$")
+    if not ext then return nil, u8"Повреждён блок картинки" end
+    local data = TH.b64dec(body)
+    return TH.storeImage(data, "cache", "")
+end
+
+function TH.importImage(pathUtf8)
+    local p = tostring(pathUtf8 or ""):gsub('"', ""):gsub("^%s+", ""):gsub("%s+$", "")
+    if p == "" then return nil, u8"Укажите путь к файлу" end
+    local ok, dec = pcall(function() return u8:decode(p) end)
+    if ok and dec then p = dec end
+    local f = io.open(p, "rb")
+    if not f then return nil, u8"Файл не найден" end
+    local data = f:read("*a")
+    f:close()
+    return TH.storeImage(data, "bg", "img_")
+end
+
+-- ---------------- цвета / числа ----------------
+function TH.hex(c, alpha)
+    local function b(v) return math.floor(TH.clamp(v or 1, 0, 1) * 255 + 0.5) end
+    if alpha then
+        return string.format("#%02X%02X%02X%02X", b(c[1]), b(c[2]), b(c[3]), b(c[4] or 1))
+    end
+    return string.format("#%02X%02X%02X", b(c[1]), b(c[2]), b(c[3]))
+end
+
+function TH.unhex(s, alpha)
+    local r, g, b, a = s:match("^#?(%x%x)(%x%x)(%x%x)(%x*)$")
+    if not r or (#a ~= 0 and #a ~= 2) then return nil end
+    local c = {tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255}
+    if alpha then c[4] = (#a == 2) and tonumber(a, 16) / 255 or 1 end
+    return c
+end
+
+function TH.fmtNum(n)
+    local s = string.format("%.3f", n)
+    s = s:gsub("0+$", ""):gsub("%.$", "")
+    return s
+end
+
+-- ---------------- темы: база и пресеты ----------------
+function TH.base()
+    return {
+        name = "Theme", author = "",
+        accent = {0.80, 0.40, 1.00}, accent2 = {0.20, 0.45, 1.00},
+        text = {1, 1, 1}, textDim = {0.62, 0.65, 0.74},
+        panel = {1, 1, 1}, borderColor = {1, 1, 1},
+        bgType = "glass",
+        c1 = {0.05, 0.06, 0.11, 0.66}, c2 = {0.05, 0.06, 0.11, 0.66},
+        c3 = {0.05, 0.06, 0.11, 0.66}, c4 = {0.05, 0.06, 0.11, 0.66},
+        blobs = 1.0,
+        pattern = "none", patternAlpha = 0.08, patternSize = 28,
+        imgFile = "", imgFit = "cover", imgDim = 0.35, imgDrift = 0.0,
+        rounding = 24, childRound = 16, frameRound = 12,
+        borderAlpha = 0.20, borderWidth = 1.3, gloss = 1.0, glow = 0.0,
+        panelAlpha = 0.045, frameAlpha = 0.07, btnAlpha = 0.09,
+        frameBorder = true, tab = "pill",
+    }
+end
+
+function TH.presets()
+    if TH._pre then return TH._pre end
+    local function P(over)
+        local T = TH.base()
+        for k, v in pairs(over) do T[k] = v end
+        return T
+    end
+    local ct = currentTheme
+    TH._pre = {
+        P({name = u8"Жидкое стекло", accent = {ct.r, ct.g, ct.b}}),
+        P({name = u8"Полночь (плоский)", bgType = "solid", c1 = {0.045, 0.05, 0.07, 0.97},
+           accent = {0.30, 0.65, 1.0}, rounding = 10, childRound = 8, frameRound = 6,
+           borderAlpha = 0.12, borderWidth = 1, gloss = 0, blobs = 0, panelAlpha = 0.035, tab = "bar"}),
+        P({name = u8"Неон-сетка", bgType = "gradient",
+           c1 = {0.07, 0.02, 0.15, 0.96}, c2 = {0.02, 0.05, 0.18, 0.96},
+           c3 = {0.03, 0.01, 0.10, 0.97}, c4 = {0.10, 0.02, 0.20, 0.97},
+           pattern = "grid", patternAlpha = 0.10, patternSize = 32,
+           accent = {0.0, 1.0, 0.80}, accent2 = {1.0, 0.2, 0.7}, borderColor = {0.0, 1.0, 0.80},
+           rounding = 4, childRound = 3, frameRound = 3, borderAlpha = 0.6, glow = 0.8, gloss = 0,
+           tab = "underline"}),
+        P({name = u8"Закат", bgType = "gradient",
+           c1 = {0.99, 0.55, 0.35, 0.96}, c2 = {0.80, 0.25, 0.55, 0.96},
+           c3 = {0.30, 0.12, 0.45, 0.97}, c4 = {0.55, 0.20, 0.40, 0.97},
+           panel = {0, 0, 0}, panelAlpha = 0.22, frameAlpha = 0.22, btnAlpha = 0.25,
+           accent = {1.0, 0.85, 0.5}, accent2 = {1.0, 0.4, 0.6}, rounding = 22, gloss = 0.5, tab = "fill"}),
+        P({name = u8"Бумага (светлая)", bgType = "solid", c1 = {0.95, 0.94, 0.91, 0.98},
+           text = {0.10, 0.11, 0.14}, textDim = {0.42, 0.44, 0.50},
+           panel = {0, 0, 0}, panelAlpha = 0.04, frameAlpha = 0.06, btnAlpha = 0.07,
+           borderColor = {0, 0, 0}, borderAlpha = 0.18, accent = {0.20, 0.42, 0.95},
+           gloss = 0, blobs = 0, rounding = 14, childRound = 10, frameRound = 8, tab = "bar"}),
+        P({name = u8"Аврора", bgType = "glass", c1 = {0.03, 0.04, 0.09, 0.94}, blobs = 2.4,
+           accent = {0.2, 0.9, 0.7}, accent2 = {0.5, 0.3, 1.0}, rounding = 26}),
+        P({name = u8"Фото (выберите картинку)", bgType = "image",
+           c1 = {0.10, 0.12, 0.22, 0.95}, c2 = {0.25, 0.10, 0.30, 0.95},
+           c3 = {0.05, 0.08, 0.16, 0.95}, c4 = {0.12, 0.20, 0.30, 0.95},
+           panel = {0, 0, 0}, panelAlpha = 0.42, frameAlpha = 0.30, btnAlpha = 0.30,
+           imgDim = 0.30, rounding = 18, gloss = 0.6, tab = "fill"}),
+        P({name = u8"Терминал", bgType = "solid", c1 = {0.02, 0.05, 0.03, 0.97},
+           text = {0.60, 1.0, 0.65}, textDim = {0.35, 0.60, 0.40}, accent = {0.2, 1.0, 0.3},
+           borderColor = {0.2, 1.0, 0.3}, borderAlpha = 0.7, pattern = "scan", patternAlpha = 0.10,
+           rounding = 0, childRound = 0, frameRound = 0, gloss = 0, blobs = 0,
+           panel = {0.2, 1.0, 0.3}, panelAlpha = 0.04, tab = "bar"}),
+    }
+    return TH._pre
+end
+
+-- ---------------- сериализация ----------------
+function TH.serialize(T, mode)
+    local out = {"RMTHEME 1"}
+    for _, f in ipairs(TH.FIELDS) do
+        local k, kind = f[1], f[2]
+        local v = T[k]
+        if v ~= nil then
+            local s
+            if kind == "str" then s = tostring(v):gsub("[%c]", "")
+            elseif kind == "rgb" then s = TH.hex(v, false)
+            elseif kind == "rgba" then s = TH.hex(v, true)
+            elseif kind == "num" then s = TH.fmtNum(v)
+            elseif kind == "bool" then s = v and "1" or "0"
+            else s = tostring(v) end
+            out[#out + 1] = k .. "=" .. s
+        end
+    end
+    local block = ""
+    if T.imgFile and T.imgFile ~= "" and TH.safeRel(T.imgFile) then
+        if mode == "ref" then
+            out[#out + 1] = "imgFile=" .. T.imgFile
+        elseif mode == "embed" then
+            local f = io.open(TH.DIR .. T.imgFile, "rb")
+            if f then
+                local data = f:read("*a")
+                f:close()
+                local kind = TH.imgKind(data)
+                if kind and #data <= TH.MAX_IMG then
+                    out[#out + 1] = "imgId=" .. TH.hash(data)
+                    out[#out + 1] = "imgExt=" .. kind
+                    block = "[image]\next=" .. kind .. "\n" .. TH.b64enc(data) .. "\n"
+                end
+            end
+        end
+    end
+    return table.concat(out, "\n") .. "\n" .. block
+end
+
+function TH.parseText(head, allowRef)
+    if not head:match("^%s*RMTHEME") then return nil, u8"Это не файл темы" end
+    local T = TH.base()
+    for line in head:gmatch("[^\r\n]+") do
+        local k, v = line:match("^%s*([%w_]+)%s*=%s*(.-)%s*$")
+        if k then
+            local f = TH.FMAP[k]
+            if f then
+                local kind = f[2]
+                if kind == "str" then
+                    v = v:gsub("%c", "")
+                    T[k] = v:sub(1, 48)
+                elseif kind == "rgb" or kind == "rgba" then
+                    local c = TH.unhex(v, kind == "rgba")
+                    if c then T[k] = c end
+                elseif kind == "num" then
+                    local n = tonumber(v)
+                    if n then T[k] = TH.clamp(n, f[3], f[4]) end
+                elseif kind == "bool" then
+                    T[k] = (v == "1" or v == "true")
+                elseif kind == "enum" then
+                    if f[3][v] then T[k] = v end
+                end
+            elseif k == "imgFile" and allowRef then
+                if TH.safeRel(v) then T.imgFile = v end
+            elseif k == "imgId" then
+                T._imgId = v:match("^%w+$")
+            elseif k == "imgExt" then
+                if v == "png" or v == "jpg" or v == "bmp" then T._imgExt = v end
+            end
+        end
+    end
+    if T.name == "" then T.name = "Theme" end
+    return T
+end
+
+-- полный разбор текста (из файла или буфера обмена); картинку кладёт в cache
+function TH.parseFull(text)
+    local pos = text:find("[image]", 1, true)
+    local T, err = TH.parseText(pos and text:sub(1, pos - 1) or text, false)
+    if not T then return nil, err end
+    if pos then
+        local rel = TH.extract(text)
+        T.imgFile = rel or ""
+    end
+    return T
+end
+
+function TH.loadFile(fn)
+    local f = io.open(TH.DIR .. fn, "rb")
+    if not f then return nil, u8"Файл не найден" end
+    local head = f:read(16384) or ""
+    local pos = head:find("[image]", 1, true)
+    local T, err = TH.parseText(pos and head:sub(1, pos - 1) or head, true)
+    if not T then f:close() return nil, err end
+    if pos then
+        local rel = (T._imgId and T._imgExt) and ("cache\\" .. T._imgId .. "." .. T._imgExt) or nil
+        if rel and TH.exists(rel) then
+            T.imgFile = rel
+        else
+            f:seek("set", 0)
+            local all = f:read("*a")
+            T.imgFile = TH.extract(all) or ""
+        end
+    end
+    f:close()
+    return T
+end
+
+-- ---------------- библиотека ----------------
+function TH.ensure()
+    if TH.cur then return end
+    pcall(createDirectory, TH.DIR)
+    pcall(createDirectory, TH.DIR .. "bg")
+    pcall(createDirectory, TH.DIR .. "cache")
+    local T
+    if TH.exists("_current.rmtheme") then
+        local ok, res = pcall(TH.loadFile, "_current.rmtheme")
+        if ok then T = res end
+    end
+    if not T then T = TH.presets()[1] end
+    TH.cur = TH.copy(T)
+end
+
+function TH.refresh()
+    TH.ensure()
+    local list = {}
+    for i, P in ipairs(TH.presets()) do
+        list[#list + 1] = {builtin = true, T = P, name = P.name, id = i}
+    end
+    for _, fn in ipairs(TH.listDir("", "*.rmtheme")) do
+        if fn:lower() ~= "_current.rmtheme" then
+            local ok, T = pcall(TH.loadFile, fn)
+            if ok and T then
+                list[#list + 1] = {file = fn, T = T, name = T.name}
+            end
+        end
+    end
+    TH.list = list
+end
+
+function TH.apply(T, key)
+    TH.cur = TH.copy(T)
+    TH.curKey = key or ""
+    TH.dirty = true
+    TH.applyStyle()
+end
+
+function TH.touch()
+    TH.dirty = true
+    TH.applyStyle()
+end
+
+function TH.saveCurrent()
+    TH.dirty = false
+    if TH.cur then
+        TH.writeFile("_current.rmtheme", TH.serialize(TH.cur, "ref"))
+    end
+end
+
+function TH.slug(name)
+    local s = tostring(name):gsub("[^%w_%-]", "_"):gsub("_+", "_"):gsub("^_", ""):gsub("_$", "")
+    s = s:lower():sub(1, 24)
+    if s == "" then s = "theme" end
+    return s
+end
+
+function TH.uniqueFile(base)
+    local fn = base .. ".rmtheme"
+    local n = 2
+    while TH.exists(fn) do
+        fn = base .. "_" .. n .. ".rmtheme"
+        n = n + 1
+    end
+    return fn
+end
+
+function TH.doSave(name)
+    name = tostring(name or ""):gsub("%c", ""):sub(1, 40)
+    local old = TH.cur.name
+    if name == "" then name = old end
+    local fn
+    if TH.curKey:sub(1, 5) == "file:" and old == name then
+        fn = TH.curKey:sub(6)
+    else
+        fn = TH.uniqueFile(TH.slug(name))
+    end
+    TH.cur.name = name
+    local text, err = TH.serialize(TH.cur, "embed")
+    if not text then return false, err end
+    if not TH.writeFile(fn, text) then return false, u8"Не удалось записать файл темы" end
+    TH.curKey = "file:" .. fn
+    TH.refresh()
+    TH.dirty = true
+    return true, fn
+end
+
+function TH.doDelete(fn)
+    os.remove(TH.DIR .. fn)
+    if TH.curKey == "file:" .. fn then TH.curKey = "" end
+    TH.refresh()
+end
+
+function TH.importPath(pathUtf8)
+    local p = tostring(pathUtf8 or ""):gsub('"', ""):gsub("^%s+", ""):gsub("%s+$", "")
+    if p == "" then return false, u8"Укажите путь к файлу темы" end
+    local ok, dec = pcall(function() return u8:decode(p) end)
+    if ok and dec then p = dec end
+    local f = io.open(p, "rb")
+    if not f then return false, u8"Файл не найден" end
+    local all = f:read("*a")
+    f:close()
+    if #all > TH.MAX_IMG * 4 / 3 + 65536 then return false, u8"Файл слишком большой" end
+    local T, err = TH.parseFull(all)
+    if not T then return false, err end
+    local fn = TH.uniqueFile(TH.slug(T.name))
+    if not TH.writeFile(fn, all) then return false, u8"Не удалось сохранить в библиотеку" end
+    TH.refresh()
+    return true, T.name
+end
+
+function TH.importClipboard()
+    local s
+    pcall(function()
+        s = imgui.GetClipboardText()
+        if type(s) ~= "string" then s = ffi.string(s) end
+    end)
+    if not s or s == "" then return false, u8"Буфер обмена пуст" end
+    local T, err = TH.parseFull(s)
+    if not T then return false, err end
+    local fn = TH.uniqueFile(TH.slug(T.name))
+    if not TH.writeFile(fn, s) then return false, u8"Не удалось сохранить в библиотеку" end
+    TH.refresh()
+    return true, T.name
+end
+
+function TH.copyToClipboard()
+    local text = TH.serialize(TH.cur, "plain")
+    local ok = pcall(imgui.SetClipboardText, text)
+    return ok
+end
+
+-- ---------------- картинки-текстуры ----------------
+function TH.getTex(rel)
+    if not rel or rel == "" or not TH.safeRel(rel) then return nil end
+    local e = TH.tex[rel]
+    if e ~= nil then return e or nil end
+    if TH.texCount >= 16 then
+        for k, v in pairs(TH.tex) do
+            if k ~= (TH.cur and TH.cur.imgFile) then
+                if v then pcall(function() imgui.ReleaseTexture(v.ptr) end) end
+                TH.tex[k] = nil
+                TH.texCount = TH.texCount - 1
+                break
+            end
+        end
+    end
+    local path = TH.DIR .. rel
+    local entry = false
+    local f = io.open(path, "rb")
+    if f then
+        local head = f:read(262144)
+        f:close()
+        local w, h = TH.imgSize(head)
+        local ok, ptr = pcall(imgui.CreateTextureFromFile, path)
+        if ok and ptr then entry = {ptr = ptr, w = w, h = h} end
+    end
+    TH.tex[rel] = entry
+    TH.texCount = TH.texCount + 1
+    return entry or nil
+end
+
+-- ---------------- стиль imgui ----------------
+function TH.applyStyle()
+    local T = TH.cur
+    if not T then return end
+    imgui.SwitchContext()
+    local V4 = imgui.ImVec4
+    local st = imgui.GetStyle()
+    st.WindowPadding = imgui.ImVec2(10, 10)
+    st.FramePadding = imgui.ImVec2(10, 7)
+    st.ItemSpacing = imgui.ImVec2(8, 8)
+    st.ItemInnerSpacing = imgui.ImVec2(6, 6)
+    st.IndentSpacing = 0
+    st.ScrollbarSize = 8
+    st.GrabMinSize = 10
+    st.WindowBorderSize = 0
+    st.ChildBorderSize = 1
+    st.PopupBorderSize = 1
+    st.FrameBorderSize = T.frameBorder and 1 or 0
+    st.WindowRounding = T.rounding
+    st.ChildRounding = T.childRound
+    st.PopupRounding = T.frameRound + 2
+    st.FrameRounding = T.frameRound
+    st.ScrollbarRounding = T.frameRound
+    st.GrabRounding = T.frameRound
+    local ac, pn, tx, td, bg, bc = T.accent, T.panel, T.text, T.textDim, T.c1, T.borderColor
+    local pa, fa, ba = T.panelAlpha, T.frameAlpha, T.btnAlpha
+    local function A(a) return V4(ac[1], ac[2], ac[3], a) end
+    local function Pn(a) return V4(pn[1], pn[2], pn[3], a) end
+    local C = st.Colors
+    local Col = imgui.Col
+    C[Col.Text] = V4(tx[1], tx[2], tx[3], 1)
+    C[Col.TextDisabled] = V4(td[1], td[2], td[3], 1)
+    C[Col.WindowBg] = V4(bg[1], bg[2], bg[3], 0.85)
+    C[Col.ChildBg] = Pn(pa)
+    C[Col.PopupBg] = V4(bg[1], bg[2], bg[3], 0.97)
+    C[Col.Border] = V4(bc[1], bc[2], bc[3], T.borderAlpha * 0.65)
+    C[Col.FrameBg] = Pn(fa)
+    C[Col.FrameBgHovered] = Pn(math.min(1, fa + 0.05))
+    C[Col.FrameBgActive] = A(0.30)
+    C[Col.TitleBg] = V4(bg[1], bg[2], bg[3], 0.90)
+    C[Col.TitleBgActive] = V4(bg[1], bg[2], bg[3], 0.95)
+    C[Col.TitleBgCollapsed] = V4(bg[1], bg[2], bg[3], 0.80)
+    C[Col.MenuBarBg] = Pn(pa)
+    C[Col.ScrollbarBg] = V4(0, 0, 0, 0)
+    C[Col.ScrollbarGrab] = Pn(0.20)
+    C[Col.ScrollbarGrabHovered] = Pn(0.32)
+    C[Col.ScrollbarGrabActive] = Pn(0.45)
+    C[Col.CheckMark] = A(1.0)
+    C[Col.SliderGrab] = A(0.80)
+    C[Col.SliderGrabActive] = A(1.0)
+    C[Col.Button] = Pn(ba)
+    C[Col.ButtonHovered] = Pn(math.min(1, ba + 0.08))
+    C[Col.ButtonActive] = A(0.40)
+    C[Col.Header] = A(0.25)
+    C[Col.HeaderHovered] = A(0.35)
+    C[Col.HeaderActive] = A(0.45)
+    C[Col.Separator] = V4(bc[1], bc[2], bc[3], 0.12)
+    C[Col.SeparatorHovered] = V4(bc[1], bc[2], bc[3], 0.25)
+    C[Col.SeparatorActive] = V4(bc[1], bc[2], bc[3], 0.40)
+    -- остальной код скрипта берёт акцентный цвет из currentTheme
+    currentTheme = {id = 0, name = T.name, chatName = T.name, r = ac[1], g = ac[2], b = ac[3]}
+    if GLASS then GLASS.R = math.floor(T.rounding) end
+end
+
+-- ---------------- рисование фона ----------------
+-- вызывает fn(x0, y0, x1, y1) для горизонтальных полос, образующих скруглённый прямоугольник
+function TH.strips(R, W, H, fn)
+    R = math.min(R, W / 2, H / 2)
+    if R < 1.5 then fn(0, 0, W, H) return end
+    local step = math.max(1, math.floor(R / 12 + 0.5))
+    local y = 0
+    while y < R - 0.01 do
+        local y2 = math.min(R, y + step)
+        local d = R - (y + y2) / 2
+        local ins = R - math.sqrt(math.max(0, R * R - d * d))
+        fn(ins, y, W - ins, y2)
+        fn(ins, H - y2, W - ins, H - y)
+        y = y2
+    end
+    fn(0, R, W, H - R)
+end
+
+-- рисует весь фон темы T в прямоугольнике (x, y, W, H). mul - общая прозрачность, sc - масштаб (1 = основное окно)
+function TH.paint(dl, x, y, W, H, T, mul, sc, t)
+    local V2, V4 = imgui.ImVec2, imgui.ImVec4
+    local U32 = imgui.ColorConvertFloat4ToU32
+    local function col(r, g, b, a)
+        a = (a or 1) * mul
+        if a < 0 then a = 0 elseif a > 1 then a = 1 end
+        return U32(V4(r, g, b, a))
+    end
+    local R = math.min(T.rounding * sc, W / 2, H / 2)
+    local x2, y2 = x + W, y + H
+    local ac, ac2 = T.accent, T.accent2
+    local c1, c2, c3, c4 = T.c1, T.c2, T.c3, T.c4
+    local bt = T.bgType
+    local tex = (bt == "image") and TH.getTex(T.imgFile) or nil
+
+    if bt == "glass" or bt == "solid" then
+        dl:AddRectFilled(V2(x, y), V2(x2, y2), col(c1[1], c1[2], c1[3], c1[4]), R)
+    elseif tex then
+        local u0, v0, u1, v1 = 0, 0, 1, 1
+        if T.imgFit == "cover" and tex.w and tex.h and tex.w > 0 and tex.h > 0 then
+            local ia, wa = tex.w / tex.h, W / H
+            local fw, fh = 1, 1
+            if ia > wa then fw = wa / ia else fh = ia / wa end
+            local dr = T.imgDrift
+            local cx, cy = 0.5, 0.5
+            if dr > 0 then
+                local z = 1 - 0.12 * dr
+                fw, fh = fw * z, fh * z
+                cx = 0.5 + math.sin(t * 0.11) * (1 - fw) * 0.5
+                cy = 0.5 + math.cos(t * 0.09) * (1 - fh) * 0.5
+            end
+            u0, u1 = cx - fw / 2, cx + fw / 2
+            v0, v1 = cy - fh / 2, cy + fh / 2
+        end
+        local white = col(1, 1, 1, 1)
+        TH.strips(R, W, H, function(a, b, c, d)
+            local ua, ub = u0 + (a / W) * (u1 - u0), u0 + (c / W) * (u1 - u0)
+            local va, vb = v0 + (b / H) * (v1 - v0), v0 + (d / H) * (v1 - v0)
+            dl:AddImage(tex.ptr, V2(x + a, y + b), V2(x + c, y + d), V2(ua, va), V2(ub, vb), white)
+        end)
+        if T.imgDim > 0.005 then
+            dl:AddRectFilled(V2(x, y), V2(x2, y2), col(0, 0, 0, T.imgDim), R)
+        end
+    else
+        local function bil(u, v, k)
+            local top = c1[k] + (c2[k] - c1[k]) * u
+            local bot = c4[k] + (c3[k] - c4[k]) * u
+            return top + (bot - top) * v
+        end
+        local function cc(u, v) return col(bil(u, v, 1), bil(u, v, 2), bil(u, v, 3), bil(u, v, 4)) end
+        TH.strips(R, W, H, function(a, b, c, d)
+            local ua, ub, va, vb = a / W, c / W, b / H, d / H
+            dl:AddRectFilledMultiColor(V2(x + a, y + b), V2(x + c, y + d),
+                cc(ua, va), cc(ub, va), cc(ub, vb), cc(ua, vb))
+        end)
+    end
+
+    -- цветные пятна (стекло)
+    if bt == "glass" and T.blobs > 0.01 then
+        dl:PushClipRect(V2(x, y), V2(x2, y2), true)
+        local mix = {(ac[1] + ac2[1]) / 2, (ac[2] + ac2[2]) / 2, (ac[3] + ac2[3]) / 2}
+        local blobs = {
+            {0.21 + math.sin(t * 0.35) * 0.035, 0.28 + math.cos(t * 0.30) * 0.045, 0.19, ac, 0.30},
+            {0.80 + math.cos(t * 0.28) * 0.04, 0.74 + math.sin(t * 0.33) * 0.05, 0.21, ac2, 0.26},
+            {0.77 + math.sin(t * 0.40) * 0.03, 0.22 + math.cos(t * 0.25) * 0.04, 0.15, mix, 0.16},
+            {0.24 + math.cos(t * 0.30) * 0.025, 0.80 + math.sin(t * 0.37) * 0.04, 0.15, ac2, 0.14},
+        }
+        local N = (sc >= 0.5) and 24 or 6
+        for _, b in ipairs(blobs) do
+            for i = 0, N - 1 do
+                local k = 1 - i / N
+                dl:AddCircleFilled(V2(x + b[1] * W, y + b[2] * H), b[3] * W * k,
+                    col(b[4][1], b[4][2], b[4][3], b[5] * 0.07 * (24 / N) * T.blobs), (sc >= 0.5) and 48 or 20)
+            end
+        end
+        dl:PopClipRect()
+    end
+
+    -- узор
+    if T.pattern ~= "none" and T.patternAlpha > 0.003 then
+        local ins = R * 0.5
+        dl:PushClipRect(V2(x + ins, y + ins), V2(x2 - ins, y2 - ins), true)
+        local s = math.max(6, T.patternSize * sc)
+        local pc = col(ac[1], ac[2], ac[3], T.patternAlpha)
+        if T.pattern == "grid" then
+            local gx = x
+            while gx <= x2 do dl:AddLine(V2(gx, y), V2(gx, y2), pc, 1); gx = gx + s end
+            local gy = y
+            while gy <= y2 do dl:AddLine(V2(x, gy), V2(x2, gy), pc, 1); gy = gy + s end
+        elseif T.pattern == "dots" then
+            local d = math.max(s, 20 * sc)
+            local gx = x + d / 2
+            while gx <= x2 do
+                local gy = y + d / 2
+                while gy <= y2 do
+                    dl:AddRectFilled(V2(gx - 1, gy - 1), V2(gx + 1, gy + 1), pc)
+                    gy = gy + d
+                end
+                gx = gx + d
+            end
+        elseif T.pattern == "diag" then
+            local d = -H
+            while d <= W do dl:AddLine(V2(x + d, y2), V2(x + d + H, y), pc, 1); d = d + s end
+        elseif T.pattern == "scan" then
+            local sp = math.max(2, 4 * sc)
+            local pb = col(0, 0, 0, T.patternAlpha * 2.5)
+            local gy = y
+            while gy <= y2 do dl:AddLine(V2(x, gy), V2(x2, gy), pb, 1); gy = gy + sp end
+        end
+        dl:PopClipRect()
+    end
+
+    -- блик сверху
+    if T.gloss > 0.01 then
+        local function hband(xa, xb, ya, yb, a)
+            local m = (xa + xb) / 2
+            dl:AddRectFilledMultiColor(V2(xa, ya), V2(m, yb), col(1, 1, 1, 0), col(1, 1, 1, a), col(1, 1, 1, a), col(1, 1, 1, 0))
+            dl:AddRectFilledMultiColor(V2(m, ya), V2(xb, yb), col(1, 1, 1, a), col(1, 1, 1, 0), col(1, 1, 1, 0), col(1, 1, 1, a))
+        end
+        local bands = (sc >= 0.5) and 16 or 4
+        local bh = 5 * sc * 16 / bands
+        for i = 0, bands - 1 do
+            local a = 0.085 * (1 - i / bands) ^ 1.5 * T.gloss
+            local ya = y + 2 * sc + i * bh
+            hband(x + R * 0.8, x2 - R * 0.8, ya, ya + bh + 0.5, a)
+        end
+        hband(x + R, x2 - R, y + sc, y + 2.5 * sc, 0.6 * T.gloss)
+    end
+
+    -- внутреннее свечение акцентом
+    if T.glow > 0.01 then
+        for i = 0, 5 do
+            local o = (1 + i * 1.6) * sc
+            dl:AddRect(V2(x + o, y + o), V2(x2 - o, y2 - o), col(ac[1], ac[2], ac[3], T.glow * 0.30 * (1 - i / 6)),
+                math.max(0, R - o), 15, math.max(1, 1.5 * sc))
+        end
+    end
+
+    -- рамка
+    if T.borderAlpha > 0.01 and T.borderWidth > 0.05 then
+        local bc = T.borderColor
+        dl:AddRect(V2(x, y), V2(x2, y2), col(bc[1], bc[2], bc[3], T.borderAlpha), R, 15, math.max(1, T.borderWidth * sc))
+    end
+end
+
+-- ---------------- хуки для основного скрипта ----------------
+function TH_APPLY()
+    local ok = pcall(function()
+        TH.ensure()
+        TH.applyStyle()
+    end)
+    return ok
+end
+
+function TH_DRAW(dl, p)
+    if not TH.cur then return false end
+    local ok, err = pcall(TH.paint, dl, p.x, p.y, GLASS.W, GLASS.H, TH.cur, GLASS.alpha, 1, os.clock())
+    if not ok then
+        if not TH.errShown then TH.errShown = true; print("TH.paint: " .. tostring(err)) end
+        return false
+    end
+    return true
+end
+
+function TH_TEXT(active)
+    local T = TH.cur
+    if not T then
+        if active then return imgui.ImVec4(1, 1, 1, 1) end
+        return imgui.ImVec4(0.68, 0.70, 0.78, 1)
+    end
+    local c = active and T.text or T.textDim
+    return imgui.ImVec4(c[1], c[2], c[3], 1)
+end
+
+function TH_FB()
+    if TH.cur then return TH.cur.frameBorder and 1 or 0 end
+    return 1
+end
+
+-- вид плашки активной вкладки; false = нарисовать стандартную "pill"
+function TH_PILL(wdl, p, s, a)
+    local T = TH.cur
+    if not T or T.tab == "pill" then return false end
+    if a < 0.01 then return true end
+    local V2 = imgui.ImVec2
+    local ac = T.accent
+    local c = GLASS.c
+    local r = T.frameRound
+    if T.tab == "bar" then
+        wdl:AddRectFilled(p, V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], 0.12 * a), r)
+        wdl:AddRectFilled(V2(p.x + 2, p.y + 6), V2(p.x + 5, p.y + s.y - 6), c(ac[1], ac[2], ac[3], a), 2)
+    elseif T.tab == "underline" then
+        wdl:AddRectFilled(p, V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], 0.08 * a), r)
+        wdl:AddRectFilled(V2(p.x + 10, p.y + s.y - 3), V2(p.x + s.x - 10, p.y + s.y - 1.5), c(ac[1], ac[2], ac[3], a), 1)
+    elseif T.tab == "fill" then
+        wdl:AddRectFilled(p, V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], 0.40 * a), r)
+        wdl:AddRect(p, V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], 0.8 * a), r, 15, 1.2)
+    end
+    return true
+end
+-- TH_ENGINE_END
+
 local function theme()
     imgui.SwitchContext()
     local ImVec4 = imgui.ImVec4
@@ -4600,6 +5530,324 @@ local function renderMiscTab()
     imgui.Dummy(imgui.ImVec2(0, 8))
     imgui.EndGroup()
 end
+
+-- TH_UI_BEGIN
+-- ================================================================
+-- Вкладка "Оформление": библиотека тем, импорт/экспорт, редактор стиля, фон-картинка.
+-- Заменяет прежнюю вкладку "Цвета" (старая функция осталась как renderMiscTabOld и не вызывается).
+-- ================================================================
+function TH.uiInit()
+    if TH.ui then return end
+    TH.ui = {
+        c = {}, f = {},
+        name = imgui.new.char[64](),
+        path = imgui.new.char[300](),
+        imgPath = imgui.new.char[300](),
+        lastName = nil, imgs = nil,
+    }
+end
+
+function TH.uiColor(label, key, alpha)
+    local v = TH.cur[key]
+    local b = TH.ui.c[key]
+    if not b then
+        b = imgui.new.float[4]()
+        TH.ui.c[key] = b
+    end
+    b[0], b[1], b[2], b[3] = v[1], v[2], v[3], v[4] or 1
+    local flags = 0
+    pcall(function()
+        local F = imgui.ColorEditFlags
+        flags = F.NoInputs
+        if alpha and F.AlphaBar then flags = require("bit").bor(flags, F.AlphaBar) end
+    end)
+    local ch
+    if alpha then
+        ch = imgui.ColorEdit4(label .. "##c_" .. key, b, flags)
+    else
+        ch = imgui.ColorEdit3(label .. "##c_" .. key, b, flags)
+    end
+    if ch then
+        v[1], v[2], v[3] = b[0], b[1], b[2]
+        if alpha then v[4] = b[3] end
+        TH.touch()
+    end
+end
+
+function TH.uiSlider(label, key, mn, mx, fmt)
+    local b = TH.ui.f[key]
+    if not b then
+        b = imgui.new.float(0)
+        TH.ui.f[key] = b
+    end
+    b[0] = TH.cur[key]
+    imgui.Text(label)
+    if imgui.SliderFloat("##s_" .. key, b, mn, mx, fmt or "%.2f") then
+        TH.cur[key] = b[0]
+        TH.touch()
+    end
+end
+
+function TH.uiChoice(label, key, opts)
+    imgui.Text(label)
+    for i, o in ipairs(opts) do
+        local act = (TH.cur[key] == o[1])
+        if act then imgui.PushStyleColor(imgui.Col.Button, accent(0.55)) end
+        if imgui.Button(o[2] .. "##ch_" .. key .. o[1], imgui.ImVec2(0, 26)) then
+            TH.cur[key] = o[1]
+            TH.touch()
+        end
+        if act then imgui.PopStyleColor(1) end
+        if i < #opts then imgui.SameLine() end
+    end
+end
+
+function TH.uiImage()
+    local T = TH.cur
+    imgui.Text(u8"Файл: " .. (T.imgFile ~= "" and T.imgFile or u8"не выбран"))
+    imgui.Text(u8"Путь к картинке (png / jpg / bmp, до 4 МБ):")
+    imgui.InputText("##thimgpath", TH.ui.imgPath, ffi.sizeof(TH.ui.imgPath))
+    if imgui.Button(u8"Загрузить картинку##thimgload", imgui.ImVec2(200, 28)) then
+        local rel, err = TH.importImage(ffi.string(TH.ui.imgPath))
+        if rel then
+            T.imgFile = rel
+            T.bgType = "image"
+            TH.ui.imgs = nil
+            TH.touch()
+            TH.say(true, u8"Картинка загружена")
+        else
+            TH.say(false, err)
+        end
+    end
+    imgui.TextDisabled(u8"Скопируйте путь к файлу (Shift + ПКМ - Копировать как путь) и вставьте сюда")
+    if not TH.ui.imgs then
+        TH.ui.imgs = {}
+        for _, fn in ipairs(TH.listDir("bg\\", "*.*")) do
+            local ext = fn:match("%.(%w+)$")
+            ext = ext and ext:lower()
+            if (ext == "png" or ext == "jpg" or ext == "jpeg" or ext == "bmp") and TH.safeRel("bg\\" .. fn) then
+                TH.ui.imgs[#TH.ui.imgs + 1] = fn
+            end
+        end
+    end
+    if #TH.ui.imgs > 0 then
+        imgui.Text(u8"Картинки в папке bg:")
+        for i = 1, math.min(#TH.ui.imgs, 24) do
+            local fn = TH.ui.imgs[i]
+            local act = (T.imgFile == "bg\\" .. fn)
+            if act then imgui.PushStyleColor(imgui.Col.Button, accent(0.55)) end
+            if imgui.Button(fn:sub(1, 18) .. "##bgimg" .. i, imgui.ImVec2(0, 24)) then
+                T.imgFile = "bg\\" .. fn
+                T.bgType = "image"
+                TH.touch()
+            end
+            if act then imgui.PopStyleColor(1) end
+            if i % 3 ~= 0 and i < #TH.ui.imgs then imgui.SameLine() end
+        end
+    end
+    imgui.Dummy(imgui.ImVec2(0, 4))
+    TH.uiChoice(u8"Вписывание:", "imgFit", {{"cover", u8"Заполнить"}, {"stretch", u8"Растянуть"}})
+    TH.uiSlider(u8"Затемнение картинки", "imgDim", 0, 1)
+    TH.uiSlider(u8"Плавное движение картинки", "imgDrift", 0, 1)
+    if T.imgFile == "" then
+        imgui.TextDisabled(u8"Пока картинки нет, фон рисуется градиентом из 4 цветов")
+        TH.uiColor(u8"Цвет: лево-верх", "c1", true)
+        TH.uiColor(u8"Цвет: право-верх", "c2", true)
+        TH.uiColor(u8"Цвет: право-низ", "c3", true)
+        TH.uiColor(u8"Цвет: лево-низ", "c4", true)
+    end
+end
+
+function TH.renderTab()
+    TH.uiInit()
+    TH.ensure()
+    if not TH.list then
+        pcall(TH.refresh)
+        if not TH.list then TH.list = {} end
+    end
+    local T = TH.cur
+    local ui = TH.ui
+    if ui.lastName ~= T.name then
+        ui.lastName = T.name
+        ffi.fill(ui.name, ffi.sizeof(ui.name), 0)
+        ffi.copy(ui.name, T.name:sub(1, 60))
+    end
+
+    imgui.SetCursorPos(imgui.ImVec2(20, 20))
+    imgui.BeginGroup()
+
+    renderSectionHeader(u8"Оформление")
+    imgui.Text(u8"Текущая тема: " .. T.name)
+
+    -- ---------- библиотека ----------
+    imgui.Dummy(imgui.ImVec2(0, 4))
+    imgui.Text(u8"Библиотека тем (клик по картинке или кнопка - применить):")
+    imgui.BeginChild("##thlist", imgui.ImVec2(-1, 230), true)
+    local mul = GLASS and GLASS.alpha or 1
+    local pendingApply, pendingDel
+    for i, e in ipairs(TH.list) do
+        local key = e.builtin and ("builtin:" .. e.id) or ("file:" .. e.file)
+        local p = imgui.GetCursorScreenPos()
+        if imgui.InvisibleButton("##thprev" .. i, imgui.ImVec2(112, 70)) then pendingApply = i end
+        TH.paint(imgui.GetWindowDrawList(), p.x, p.y, 112, 70, e.T, mul, 112 / 800, os.clock())
+        imgui.SameLine()
+        imgui.BeginGroup()
+        local active = (TH.curKey == key)
+        imgui.Text((active and u8"* " or "") .. e.name)
+        local sub = e.builtin and u8"встроенная" or ((e.T.author ~= "" and e.T.author) or e.file)
+        imgui.TextDisabled(sub)
+        if imgui.Button((active and u8"Применена" or u8"Применить") .. "##ap" .. i, imgui.ImVec2(110, 24)) then
+            pendingApply = i
+        end
+        if not e.builtin then
+            imgui.SameLine()
+            if imgui.Button(u8"Удалить##del" .. i, imgui.ImVec2(80, 24)) then pendingDel = i end
+        end
+        imgui.EndGroup()
+        imgui.Dummy(imgui.ImVec2(0, 2))
+    end
+    imgui.EndChild()
+    if pendingApply then
+        local e = TH.list[pendingApply]
+        TH.apply(e.T, e.builtin and ("builtin:" .. e.id) or ("file:" .. e.file))
+    elseif pendingDel then
+        TH.doDelete(TH.list[pendingDel].file)
+    end
+
+    -- ---------- сохранить / обмен ----------
+    imgui.Dummy(imgui.ImVec2(0, 4))
+    imgui.Text(u8"Имя темы:")
+    imgui.InputText("##thname", ui.name, ffi.sizeof(ui.name))
+    if imgui.Button(u8"Сохранить в библиотеку", imgui.ImVec2(220, 28)) then
+        local ok, a, b = pcall(TH.doSave, ffi.string(ui.name))
+        if ok and a then
+            TH.say(true, u8"Сохранено: config/rabotyaga_themes/" .. tostring(b))
+        else
+            TH.say(false, ok and tostring(b) or u8"Не удалось сохранить тему")
+        end
+    end
+    imgui.SameLine()
+    if imgui.Button(u8"Обновить список", imgui.ImVec2(150, 28)) then
+        TH.ui.imgs = nil
+        pcall(TH.refresh)
+    end
+    imgui.SameLine()
+    if imgui.Button(u8"Открыть папку тем", imgui.ImVec2(160, 28)) then TH.openFolder() end
+
+    imgui.Dummy(imgui.ImVec2(0, 4))
+    imgui.Text(u8"Импорт темы из файла (путь к .rmtheme):")
+    imgui.InputText("##thimp", ui.path, ffi.sizeof(ui.path))
+    if imgui.Button(u8"Импортировать файл", imgui.ImVec2(200, 28)) then
+        local ok, a, b = pcall(TH.importPath, ffi.string(ui.path))
+        if ok and a then TH.say(true, u8"Добавлена тема: " .. tostring(b))
+        else TH.say(false, ok and tostring(b) or u8"Ошибка импорта") end
+    end
+    imgui.SameLine()
+    if imgui.Button(u8"Вставить из буфера", imgui.ImVec2(170, 28)) then
+        local ok, a, b = pcall(TH.importClipboard)
+        if ok and a then TH.say(true, u8"Добавлена тема: " .. tostring(b))
+        else TH.say(false, ok and tostring(b) or u8"Ошибка импорта") end
+    end
+    imgui.SameLine()
+    if imgui.Button(u8"Копировать код темы", imgui.ImVec2(180, 28)) then
+        if TH.copyToClipboard() then TH.say(true, u8"Код темы скопирован (без картинки)")
+        else TH.say(false, u8"Не удалось скопировать") end
+    end
+    imgui.TextDisabled(u8"Файл .rmtheme вместе с картинкой - один файл: просто отправьте его другу и положите в папку тем, затем Обновить список")
+
+    if TH.msg then
+        local col = TH.msgOk and imgui.ImVec4(0.4, 1.0, 0.5, 1.0) or imgui.ImVec4(1.0, 0.45, 0.4, 1.0)
+        imgui.PushStyleColor(imgui.Col.Text, col)
+        imgui.TextWrapped(TH.msg)
+        imgui.PopStyleColor(1)
+    end
+
+    imgui.Dummy(imgui.ImVec2(0, 8))
+    imgui.Separator()
+    imgui.Dummy(imgui.ImVec2(0, 4))
+
+    -- ---------- редактор ----------
+    renderSectionHeader(u8"Редактор стиля")
+    local open = 0
+    pcall(function() open = imgui.TreeNodeFlags.DefaultOpen end)
+
+    if imgui.CollapsingHeader(u8"Фон", open) then
+        TH.uiChoice(u8"Тип фона:", "bgType", {
+            {"glass", u8"Стекло"}, {"solid", u8"Сплошной"}, {"gradient", u8"Градиент"}, {"image", u8"Картинка"}})
+        imgui.Dummy(imgui.ImVec2(0, 4))
+        if T.bgType == "glass" or T.bgType == "solid" then
+            TH.uiColor(u8"Цвет и прозрачность фона", "c1", true)
+            if T.bgType == "glass" then
+                TH.uiSlider(u8"Яркость цветных пятен", "blobs", 0, 3)
+            end
+        elseif T.bgType == "gradient" then
+            TH.uiColor(u8"Цвет: лево-верх", "c1", true)
+            TH.uiColor(u8"Цвет: право-верх", "c2", true)
+            TH.uiColor(u8"Цвет: право-низ", "c3", true)
+            TH.uiColor(u8"Цвет: лево-низ", "c4", true)
+        else
+            TH.uiImage()
+        end
+        imgui.Dummy(imgui.ImVec2(0, 4))
+        TH.uiChoice(u8"Узор поверх фона:", "pattern", {
+            {"none", u8"Нет"}, {"grid", u8"Сетка"}, {"dots", u8"Точки"}, {"diag", u8"Диагональ"}, {"scan", u8"Строки"}})
+        if T.pattern ~= "none" then
+            TH.uiSlider(u8"Яркость узора", "patternAlpha", 0, 0.5)
+            TH.uiSlider(u8"Шаг узора", "patternSize", 12, 80, "%.0f")
+        end
+    end
+
+    if imgui.CollapsingHeader(u8"Цвета") then
+        imgui.Text(u8"Быстрый акцент:")
+        for i, ct in ipairs(colorThemes) do
+            imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(ct.r, ct.g, ct.b, 0.85))
+            imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(ct.r, ct.g, ct.b, 1.0))
+            imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(ct.r, ct.g, ct.b, 1.0))
+            if imgui.Button("##qa" .. i, imgui.ImVec2(34, 24)) then
+                T.accent = {ct.r, ct.g, ct.b}
+                TH.touch()
+            end
+            imgui.PopStyleColor(3)
+            if i < #colorThemes then imgui.SameLine() end
+        end
+        imgui.Dummy(imgui.ImVec2(0, 4))
+        TH.uiColor(u8"Акцент (кнопки, галочки, заголовки)", "accent", false)
+        TH.uiColor(u8"Второй акцент (пятна, градиенты)", "accent2", false)
+        TH.uiColor(u8"Текст", "text", false)
+        TH.uiColor(u8"Приглушённый текст", "textDim", false)
+        TH.uiColor(u8"Цвет панелей и кнопок (белый/чёрный)", "panel", false)
+        TH.uiColor(u8"Цвет рамки", "borderColor", false)
+    end
+
+    if imgui.CollapsingHeader(u8"Окно и панели") then
+        TH.uiSlider(u8"Скругление окна", "rounding", 0, 32, "%.0f")
+        TH.uiSlider(u8"Скругление панелей", "childRound", 0, 28, "%.0f")
+        TH.uiSlider(u8"Скругление кнопок и полей", "frameRound", 0, 20, "%.0f")
+        TH.uiSlider(u8"Прозрачность рамки", "borderAlpha", 0, 1)
+        TH.uiSlider(u8"Толщина рамки", "borderWidth", 0, 4)
+        TH.uiSlider(u8"Блик сверху", "gloss", 0, 1)
+        TH.uiSlider(u8"Свечение по краю", "glow", 0, 1)
+        TH.uiSlider(u8"Непрозрачность панелей", "panelAlpha", 0, 0.9)
+        TH.uiSlider(u8"Непрозрачность полей", "frameAlpha", 0, 0.9)
+        TH.uiSlider(u8"Непрозрачность кнопок", "btnAlpha", 0, 0.9)
+        if imgui.Checkbox(u8"Рамка у кнопок и полей", imgui.new.bool(T.frameBorder)) then
+            T.frameBorder = not T.frameBorder
+            TH.touch()
+        end
+    end
+
+    if imgui.CollapsingHeader(u8"Вкладки слева") then
+        TH.uiChoice(u8"Стиль выделения вкладки:", "tab", {
+            {"pill", u8"Капсула"}, {"bar", u8"Полоса"}, {"underline", u8"Подчёркивание"},
+            {"fill", u8"Заливка"}, {"none", u8"Без выделения"}})
+    end
+
+    imgui.Dummy(imgui.ImVec2(0, 8))
+    imgui.EndGroup()
+
+    if TH.dirty and not isKeyDown(0x01) then TH.saveCurrent() end
+end
+-- TH_UI_END
 
 local function renderRouteTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
@@ -6151,7 +7399,7 @@ local newFrame = imgui.OnFrame(
                 {id = 2, label = u8"Приоритет"},
                 {id = 3, label = u8"Конфиги"},
                 {id = 4, label = u8"Коллизия"},
-                {id = 5, label = u8"Цвета"},
+                {id = 5, label = u8"Оформление"},
                 {id = 6, label = u8"Маршрут"},
                 {id = 7, label = u8"Пиво"},
                 {id = 8, label = u8"Extra"},
@@ -6189,8 +7437,8 @@ local newFrame = imgui.OnFrame(
 
                 imgui.SetCursorScreenPos(imgui.ImVec2(p.x + 14 + 4 * ta, p.y + (s.y - imgui.GetTextLineHeight()) / 2 - 1))
 
-                local textColor = imgui.ImVec4(0.68, 0.70, 0.78, 1.0)
-                if isActive then textColor = imgui.ImVec4(1.0, 1.0, 1.0, 1.0) end
+                local textColor = TH_TEXT(false)
+                if isActive then textColor = TH_TEXT(true) end
                 if locked then textColor = imgui.ImVec4(0.52, 0.47, 0.58, 1.0) end
                 imgui.TextColored(textColor, tab.label)
                 if locked then licDrawLock(wdl, p, s) end
@@ -6217,7 +7465,7 @@ local newFrame = imgui.OnFrame(
             elseif selectedTab == 4 then
                 renderCollisionTab()
             elseif selectedTab == 5 then
-                renderMiscTab()
+                TH.renderTab()
             elseif selectedTab == 6 then
                 renderRouteTab()
             elseif selectedTab == 7 then
