@@ -539,26 +539,26 @@ local routeCheckDistance = 5.0
 local routeOreRadius = 15.0
 
 -- ================================================================
--- Маршруты (рабочие записи) и запись маршрутов
+-- РњР°СЂС€СЂСѓС‚С‹ (СЂР°Р±РѕС‡РёРµ Р·Р°РїРёСЃРё) Рё Р·Р°РїРёСЃСЊ РјР°СЂС€СЂСѓС‚РѕРІ
 -- ================================================================
-local activeRouteIndex = 1          -- 1 = встроенный маршрут, 2+ = пользовательские
-local customRoutes = {}             -- список { {name=.., points=..}, ... }, общий для сохранения
+local activeRouteIndex = 1          -- 1 = РІСЃС‚СЂРѕРµРЅРЅС‹Р№ РјР°СЂС€СЂСѓС‚, 2+ = РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ
+local customRoutes = {}             -- СЃРїРёСЃРѕРє { {name=.., points=..}, ... }, РѕР±С‰РёР№ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ
 local customRoutesFilePath = "moonloader/config/rabotyaga_routes.lua"
-local oldRoute2FilePath = "moonloader/config/rabotyaga_route2.lua"  -- старый формат, для переноса
+local oldRoute2FilePath = "moonloader/config/rabotyaga_route2.lua"  -- СЃС‚Р°СЂС‹Р№ С„РѕСЂРјР°С‚, РґР»СЏ РїРµСЂРµРЅРѕСЃР°
 
 local isRecordingRoute = false
 local recordingBuffer = {}
-local recordMinDistance = 1.5       -- минимальное расстояние между записанными точками
+local recordMinDistance = 1.5       -- РјРёРЅРёРјР°Р»СЊРЅРѕРµ СЂР°СЃСЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ Р·Р°РїРёСЃР°РЅРЅС‹РјРё С‚РѕС‡РєР°РјРё
 local lastRecordX, lastRecordY, lastRecordZ = 0.0, 0.0, 0.0
 
-local autoRouteSwitch = false       -- кончил текущий маршрут -> переключиться на следующий
+local autoRouteSwitch = false       -- РєРѕРЅС‡РёР» С‚РµРєСѓС‰РёР№ РјР°СЂС€СЂСѓС‚ -> РїРµСЂРµРєР»СЋС‡РёС‚СЊСЃСЏ РЅР° СЃР»РµРґСѓСЋС‰РёР№
 
 -- ================================================================
--- Авто пиво (отдельный таймер, работает независимо от бота)
+-- РђРІС‚Рѕ РїРёРІРѕ (РѕС‚РґРµР»СЊРЅС‹Р№ С‚Р°Р№РјРµСЂ, СЂР°Р±РѕС‚Р°РµС‚ РЅРµР·Р°РІРёСЃРёРјРѕ РѕС‚ Р±РѕС‚Р°)
 -- ================================================================
 local beerEnabled = false
 local beerElapsed = 0
-local beerInterval = 600            -- 10 минут по умолчанию
+local beerInterval = 600            -- 10 РјРёРЅСѓС‚ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
 local beerLastTick = os.time()
 
 local farmStartTime = 0
@@ -575,11 +575,11 @@ local orePriority = {
 }
 
 local oreNames = {
-    [1] = u8"Камень",
-    [2] = u8"Металл",
-    [3] = u8"Серебро",
-    [4] = u8"Бронза",
-    [5] = u8"Золото"
+    [1] = u8"РљР°РјРµРЅСЊ",
+    [2] = u8"РњРµС‚Р°Р»Р»",
+    [3] = u8"РЎРµСЂРµР±СЂРѕ",
+    [4] = u8"Р‘СЂРѕРЅР·Р°",
+    [5] = u8"Р—РѕР»РѕС‚Рѕ"
 }
 
 local oreTextures = {
@@ -616,12 +616,12 @@ local currentConfig = "default"
 local configName = imgui.new.char[256]("default")
 
 local colorThemes = {
-    { id = 1, name = u8"Зелёный",    chatName = 'Зелёный',    r = 0.0,  g = 1.0,  b = 0.5  },
-    { id = 2, name = u8"Синий",      chatName = 'Синий',      r = 0.15, g = 0.55, b = 1.0  },
-    { id = 3, name = u8"Фиолетовый", chatName = 'Фиолетовый', r = 0.80, g = 0.40, b = 1.0  },
-    { id = 4, name = u8"Красный",    chatName = 'Красный',    r = 1.0,  g = 0.25, b = 0.3  },
-    { id = 5, name = u8"Оранжевый",  chatName = 'Оранжевый',  r = 1.0,  g = 0.6,  b = 0.15 },
-    { id = 6, name = u8"Бирюзовый",  chatName = 'Бирюзовый',  r = 0.1,  g = 0.85, b = 0.85 },
+    { id = 1, name = u8"Р—РµР»С‘РЅС‹Р№",    chatName = 'Р—РµР»С‘РЅС‹Р№',    r = 0.0,  g = 1.0,  b = 0.5  },
+    { id = 2, name = u8"РЎРёРЅРёР№",      chatName = 'РЎРёРЅРёР№',      r = 0.15, g = 0.55, b = 1.0  },
+    { id = 3, name = u8"Р¤РёРѕР»РµС‚РѕРІС‹Р№", chatName = 'Р¤РёРѕР»РµС‚РѕРІС‹Р№', r = 0.80, g = 0.40, b = 1.0  },
+    { id = 4, name = u8"РљСЂР°СЃРЅС‹Р№",    chatName = 'РљСЂР°СЃРЅС‹Р№',    r = 1.0,  g = 0.25, b = 0.3  },
+    { id = 5, name = u8"РћСЂР°РЅР¶РµРІС‹Р№",  chatName = 'РћСЂР°РЅР¶РµРІС‹Р№',  r = 1.0,  g = 0.6,  b = 0.15 },
+    { id = 6, name = u8"Р‘РёСЂСЋР·РѕРІС‹Р№",  chatName = 'Р‘РёСЂСЋР·РѕРІС‹Р№',  r = 0.1,  g = 0.85, b = 0.85 },
 }
 
 local mainIni = inicfg.load({
@@ -833,21 +833,21 @@ function loadCustomRoutesFromFile()
         end
     end
     
-    -- Перенос со старого формата (если есть rabotyaga_route2.lua)
+    -- РџРµСЂРµРЅРѕСЃ СЃРѕ СЃС‚Р°СЂРѕРіРѕ С„РѕСЂРјР°С‚Р° (РµСЃР»Рё РµСЃС‚СЊ rabotyaga_route2.lua)
     if doesFileExist(oldRoute2FilePath) then
         local chunk = loadfile(oldRoute2FilePath)
         if chunk then
             local ok, data = pcall(chunk)
             if ok and type(data) == "table" and #data > 0 then
-                customRoutes = { {name = u8"Маршрут 2", points = data, oreRadius = routeOreRadius} }
+                customRoutes = { {name = u8"РњР°СЂС€СЂСѓС‚ 2", points = data, oreRadius = routeOreRadius} }
                 saveCustomRoutesToFile()
-                sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Старый маршрут 2 перенесён в новый список', -1)
+                sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}РЎС‚Р°СЂС‹Р№ РјР°СЂС€СЂСѓС‚ 2 РїРµСЂРµРЅРµСЃС‘РЅ РІ РЅРѕРІС‹Р№ СЃРїРёСЃРѕРє', -1)
             end
         end
     end
 end
 
--- Количество маршрутов: встроенный (1) + все пользовательские
+-- РљРѕР»РёС‡РµСЃС‚РІРѕ РјР°СЂС€СЂСѓС‚РѕРІ: РІСЃС‚СЂРѕРµРЅРЅС‹Р№ (1) + РІСЃРµ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ
 function getRouteCount()
     return 1 + #customRoutes
 end
@@ -865,20 +865,20 @@ end
 
 function getRouteName(index)
     if index == 1 then
-        return u8"Маршрут 1 (встроенный)"
+        return u8"РњР°СЂС€СЂСѓС‚ 1 (РІСЃС‚СЂРѕРµРЅРЅС‹Р№)"
     end
     local custom = customRoutes[index - 1]
     if custom then
         return custom.name
     end
-    return u8"Неизвестный маршрут"
+    return u8"РќРµРёР·РІРµСЃС‚РЅС‹Р№ РјР°СЂС€СЂСѓС‚"
 end
 
 function getActiveRoute()
     return getRoutePoints(activeRouteIndex)
 end
 
--- Радиус поиска руды у каждого маршрута свой
+-- Р Р°РґРёСѓСЃ РїРѕРёСЃРєР° СЂСѓРґС‹ Сѓ РєР°Р¶РґРѕРіРѕ РјР°СЂС€СЂСѓС‚Р° СЃРІРѕР№
 function getRouteOreRadius(index)
     if index == 1 then
         return tonumber(mainIni.main.builtinOreRadius) or routeOreRadius
@@ -901,7 +901,7 @@ function setRouteOreRadius(index, value)
 end
 
 function saveRouteOreRadiusIfNeeded()
-    if oreRadiusDirty and not isKeyDown(0x01) then -- ждём, пока отпустят мышь
+    if oreRadiusDirty and not isKeyDown(0x01) then -- Р¶РґС‘Рј, РїРѕРєР° РѕС‚РїСѓСЃС‚СЏС‚ РјС‹С€СЊ
         oreRadiusDirty = false
         inicfg.save(mainIni, 'autominev2.ini')
         saveCustomRoutesToFile()
@@ -909,7 +909,7 @@ function saveRouteOreRadiusIfNeeded()
 end
 
 function deleteCustomRoute(index)
-    if index == 1 then return end -- встроенный маршрут удалять нельзя
+    if index == 1 then return end -- РІСЃС‚СЂРѕРµРЅРЅС‹Р№ РјР°СЂС€СЂСѓС‚ СѓРґР°Р»СЏС‚СЊ РЅРµР»СЊР·СЏ
     local customIdx = index - 1
     if not customRoutes[customIdx] then return end
     table.remove(customRoutes, customIdx)
@@ -918,7 +918,7 @@ function deleteCustomRoute(index)
         activeRouteIndex = math.max(1, activeRouteIndex - 1)
     end
     currentRoutePoint = 1
-    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Маршрут удалён', -1)
+    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}РњР°СЂС€СЂСѓС‚ СѓРґР°Р»С‘РЅ', -1)
 end
 
 function getRecordAction()
@@ -943,12 +943,12 @@ function startRouteRecording()
     local x, y, z = getCharCoordinates(PLAYER_PED)
     lastRecordX, lastRecordY, lastRecordZ = x, y, z
     table.insert(recordingBuffer, {x = x, y = y, z = z, action = "MOVE"})
-    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Запись маршрута начата. Иди по пути как надо.', -1)
+    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Р—Р°РїРёСЃСЊ РјР°СЂС€СЂСѓС‚Р° РЅР°С‡Р°С‚Р°. РРґРё РїРѕ РїСѓС‚Рё РєР°Рє РЅР°РґРѕ.', -1)
 end
 
 function stopRouteRecording()
     isRecordingRoute = false
-    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Запись остановлена. Точек записано: ' .. #recordingBuffer, -1)
+    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Р—Р°РїРёСЃСЊ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°. РўРѕС‡РµРє Р·Р°РїРёСЃР°РЅРѕ: ' .. #recordingBuffer, -1)
 end
 
 function recordRouteTick()
@@ -964,33 +964,33 @@ end
 
 function saveRecordingAsNewRoute()
     if #recordingBuffer < 2 then
-        sampAddChatMessage('{ff3333}[rabotyaga]: {ffffff}Слишком мало точек, ничего не сохранено!', -1)
+        sampAddChatMessage('{ff3333}[rabotyaga]: {ffffff}РЎР»РёС€РєРѕРј РјР°Р»Рѕ С‚РѕС‡РµРє, РЅРёС‡РµРіРѕ РЅРµ СЃРѕС…СЂР°РЅРµРЅРѕ!', -1)
         return
     end
     local newIndex = getRouteCount() + 1
-    local newName = u8"Маршрут " .. newIndex
+    local newName = u8"РњР°СЂС€СЂСѓС‚ " .. newIndex
     table.insert(customRoutes, {name = newName, points = recordingBuffer, oreRadius = routeOreRadius})
     saveCustomRoutesToFile()
-    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Записан новый маршрут (' .. #recordingBuffer .. ' точек), всего маршрутов: ' .. getRouteCount(), -1)
+    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Р—Р°РїРёСЃР°РЅ РЅРѕРІС‹Р№ РјР°СЂС€СЂСѓС‚ (' .. #recordingBuffer .. ' С‚РѕС‡РµРє), РІСЃРµРіРѕ РјР°СЂС€СЂСѓС‚РѕРІ: ' .. getRouteCount(), -1)
 end
 
 function switchToNextRoute()
     local total = getRouteCount()
     if total <= 1 then
-        return -- другого маршрута нет, переключаться не на что
+        return -- РґСЂСѓРіРѕРіРѕ РјР°СЂС€СЂСѓС‚Р° РЅРµС‚, РїРµСЂРµРєР»СЋС‡Р°С‚СЊСЃСЏ РЅРµ РЅР° С‡С‚Рѕ
     end
     activeRouteIndex = activeRouteIndex + 1
     if activeRouteIndex > total then
         activeRouteIndex = 1
     end
     currentRoutePoint = 1
-    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Следующий: маршрут ' .. u8:decode(getRouteName(activeRouteIndex)), -1)
+    sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}РЎР»РµРґСѓСЋС‰РёР№: РјР°СЂС€СЂСѓС‚ ' .. u8:decode(getRouteName(activeRouteIndex)), -1)
 end
 
 function beerAutoTick()
     if beerEnabled and not licPro() then
         beerEnabled = false
-        licDeny('Авто-пиво')
+        licDeny('РђРІС‚Рѕ-РїРёРІРѕ')
     end
     if beerEnabled then
         local now = os.time()
@@ -1001,7 +1001,7 @@ function beerAutoTick()
             if beerElapsed >= beerInterval then
                 if isSampAvailable() and not sampIsChatInputActive() and not sampIsDialogActive() then
                     sampSendChat("/beer")
-                    sampAddChatMessage('{8888FF}[BeerBot]: {ffffff}Отправлена команда /beer (пиво пьём).', -1)
+                    sampAddChatMessage('{8888FF}[BeerBot]: {ffffff}РћС‚РїСЂР°РІР»РµРЅР° РєРѕРјР°РЅРґР° /beer (РїРёРІРѕ РїСЊС‘Рј).', -1)
                 end
                 beerElapsed = 0
             end
@@ -1013,27 +1013,27 @@ end
 
 -- RS_BLOCK_BEGIN
 -- ================================================================
--- Учёт респавна руды: куда пришла, когда пропала, сколько ждать
--- Всё держится в одной таблице RS (чтобы не превышать лимит локальных переменных Lua).
+-- РЈС‡С‘С‚ СЂРµСЃРїР°РІРЅР° СЂСѓРґС‹: РєСѓРґР° РїСЂРёС€Р»Р°, РєРѕРіРґР° РїСЂРѕРїР°Р»Р°, СЃРєРѕР»СЊРєРѕ Р¶РґР°С‚СЊ
+-- Р’СЃС‘ РґРµСЂР¶РёС‚СЃСЏ РІ РѕРґРЅРѕР№ С‚Р°Р±Р»РёС†Рµ RS (С‡С‚РѕР±С‹ РЅРµ РїСЂРµРІС‹С€Р°С‚СЊ Р»РёРјРёС‚ Р»РѕРєР°Р»СЊРЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С… Lua).
 -- ================================================================
 local RS = {
-    spots = {},                  -- {x,y,z,types={[тип]=раз},samples={сек,...},med,present,depletedAt,depletedValid}
+    spots = {},                  -- {x,y,z,types={[С‚РёРї]=СЂР°Р·},samples={СЃРµРє,...},med,present,depletedAt,depletedValid}
     filePath = "moonloader/config/rabotyaga_spots.lua",
     dirty = false,
     settingsDirty = false,
     lastSave = 0,
     lastScan = 0,
-    maxSpots = 3000,             -- предел по количеству мест, чтобы не раздувать память и файл
-    mergeRadius = 2.0,           -- руды ближе этого расстояния считаются одним местом
-    observeRadius = 120,         -- смысл: дальше этого = не считаем; иначе: учёт только вблизи
+    maxSpots = 3000,             -- РїСЂРµРґРµР» РїРѕ РєРѕР»РёС‡РµСЃС‚РІСѓ РјРµСЃС‚, С‡С‚РѕР±С‹ РЅРµ СЂР°Р·РґСѓРІР°С‚СЊ РїР°РјСЏС‚СЊ Рё С„Р°Р№Р»
+    mergeRadius = 2.0,           -- СЂСѓРґС‹ Р±Р»РёР¶Рµ СЌС‚РѕРіРѕ СЂР°СЃСЃС‚РѕСЏРЅРёСЏ СЃС‡РёС‚Р°СЋС‚СЃСЏ РѕРґРЅРёРј РјРµСЃС‚РѕРј
+    observeRadius = 120,         -- СЃРјС‹СЃР»: РґР°Р»СЊС€Рµ СЌС‚РѕРіРѕ = РЅРµ СЃС‡РёС‚Р°РµРј; РёРЅР°С‡Рµ: СѓС‡С‘С‚ С‚РѕР»СЊРєРѕ РІР±Р»РёР·Рё
     trackEnabled = true,
     hudEnabled = true,
     waitEnabled = false,
-    waitMax = 30,                -- до скольки секунд ждать возрождения руды на месте
-    waitGrace = 15,              -- сколько секунд ещё ждём после ожидаемого времени
+    waitMax = 30,                -- РґРѕ СЃРєРѕР»СЊРєРё СЃРµРєСѓРЅРґ Р¶РґР°С‚СЊ РІРѕР·СЂРѕР¶РґРµРЅРёСЏ СЂСѓРґС‹ РЅР° РјРµСЃС‚Рµ
+    waitGrace = 15,              -- СЃРєРѕР»СЊРєРѕ СЃРµРєСѓРЅРґ РµС‰С‘ Р¶РґС‘Рј РїРѕСЃР»Рµ РѕР¶РёРґР°РµРјРѕРіРѕ РІСЂРµРјРµРЅРё
     maxSamples = 15,
-    posById = {},                -- [id объекта] = {x,y,z}
-    spotById = {},               -- [id объекта] = место из базы
+    posById = {},                -- [id РѕР±СЉРµРєС‚Р°] = {x,y,z}
+    spotById = {},               -- [id РѕР±СЉРµРєС‚Р°] = РјРµСЃС‚Рѕ РёР· Р±Р°Р·С‹
     font = nil,
     waitingSpot = nil,
     summary = nil,
@@ -1077,7 +1077,7 @@ function rsFindSpot(x, y, z)
     return best
 end
 
--- Самый частый тип руды на этом месте
+-- РЎР°РјС‹Р№ С‡Р°СЃС‚С‹Р№ С‚РёРї СЂСѓРґС‹ РЅР° СЌС‚РѕРј РјРµСЃС‚Рµ
 function rsSpotType(spot)
     local bestT, bestN = nil, 0
     for t, n in pairs(spot.types) do
@@ -1098,7 +1098,7 @@ function rsAddSample(spot, sec)
     RS.dirty = true
 end
 
--- Сколько секунд до возрождения (отрицательное = просрочено), nil если данных нет
+-- РЎРєРѕР»СЊРєРѕ СЃРµРєСѓРЅРґ РґРѕ РІРѕР·СЂРѕР¶РґРµРЅРёСЏ (РѕС‚СЂРёС†Р°С‚РµР»СЊРЅРѕРµ = РїСЂРѕСЃСЂРѕС‡РµРЅРѕ), nil РµСЃР»Рё РґР°РЅРЅС‹С… РЅРµС‚
 function rsSpotEta(spot)
     if spot.present or not spot.depletedAt or not spot.med then
         return nil
@@ -1106,7 +1106,7 @@ function rsSpotEta(spot)
     return spot.depletedAt + spot.med - os.time()
 end
 
--- Руда добыта (событие onDestroyObject)
+-- Р СѓРґР° РґРѕР±С‹С‚Р° (СЃРѕР±С‹С‚РёРµ onDestroyObject)
 function rsOnOreDestroyed(id)
     local spot = RS.spotById[id]
     if spot and RS.trackEnabled and licPro() then
@@ -1126,7 +1126,7 @@ function rsOnOreDestroyed(id)
     RS.posById[id] = nil
 end
 
--- Раз в полсекунды: запоминаем новые руды в районе, видим возрождение уже добытых
+-- Р Р°Р· РІ РїРѕР»СЃРµРєСѓРЅРґС‹: Р·Р°РїРѕРјРёРЅР°РµРј РЅРѕРІС‹Рµ СЂСѓРґС‹ РІ СЂР°Р№РѕРЅРµ, РІРёРґРёРј РІРѕР·СЂРѕР¶РґРµРЅРёРµ СѓР¶Рµ РґРѕР±С‹С‚С‹С…
 function rsScan()
     local now = os.time()
     for id, oreType in pairs(resources) do
@@ -1162,7 +1162,7 @@ function rsScan()
         end
     end
 
-    -- Если место уже добыто, но мы больше его не видим: время снимать нельзя
+    -- Р•СЃР»Рё РјРµСЃС‚Рѕ СѓР¶Рµ РґРѕР±С‹С‚Рѕ, РЅРѕ РјС‹ Р±РѕР»СЊС€Рµ РµРіРѕ РЅРµ РІРёРґРёРј: РІСЂРµРјСЏ СЃРЅРёРјР°С‚СЊ РЅРµР»СЊР·СЏ
     local px, py = getCharCoordinates(PLAYER_PED)
     local limit = RS.observeRadius * RS.observeRadius
     for i = 1, #RS.spots do
@@ -1176,7 +1176,7 @@ function rsScan()
     end
 end
 
--- Место, у которого стоит подождать возрождение (рядом с текущей точкой маршрута)
+-- РњРµСЃС‚Рѕ, Сѓ РєРѕС‚РѕСЂРѕРіРѕ СЃС‚РѕРёС‚ РїРѕРґРѕР¶РґР°С‚СЊ РІРѕР·СЂРѕР¶РґРµРЅРёРµ (СЂСЏРґРѕРј СЃ С‚РµРєСѓС‰РµР№ С‚РѕС‡РєРѕР№ РјР°СЂС€СЂСѓС‚Р°)
 function rsFindWaitSpot(routeX, routeY, routeZ, radius)
     if not (RS.trackEnabled and RS.waitEnabled and licPro()) then
         return nil
@@ -1209,7 +1209,7 @@ function rsFindWaitSpot(routeX, routeY, routeZ, radius)
     return best
 end
 
--- Подписи над местами, где руда ещё не выросла
+-- РџРѕРґРїРёСЃРё РЅР°Рґ РјРµСЃС‚Р°РјРё, РіРґРµ СЂСѓРґР° РµС‰С‘ РЅРµ РІС‹СЂРѕСЃР»Р°
 function rsDrawHud()
     if not (RS.trackEnabled and RS.hudEnabled and RS.font and licPro()) then
         return
@@ -1224,17 +1224,17 @@ function rsDrawHud()
                 local sx, sy = convert3DCoordsToScreen(s.x, s.y, s.z + 1.0)
                 if sx and sy then
                     local t = rsSpotType(s)
-                    local name = t and u8:decode(oreNames[t]) or "Руда"
+                    local name = t and u8:decode(oreNames[t]) or "Р СѓРґР°"
                     local eta = rsSpotEta(s)
                     local text, color
                     if not eta then
-                        text = name .. " (прошло " .. rsFmtTime(now - s.depletedAt) .. ")"
+                        text = name .. " (РїСЂРѕС€Р»Рѕ " .. rsFmtTime(now - s.depletedAt) .. ")"
                         color = 0xFFAAAAAA
                     elseif eta > 0 then
                         text = name .. " ~" .. rsFmtTime(eta)
                         color = eta <= 5 and 0xFF55FF55 or 0xFFFFD84D
                     else
-                        text = name .. " уже +" .. rsFmtTime(-eta)
+                        text = name .. " СѓР¶Рµ +" .. rsFmtTime(-eta)
                         color = 0xFFFF8844
                     end
                     renderFontDrawText(RS.font, text, sx, sy, color)
@@ -1305,7 +1305,7 @@ function rsSaveSettings()
     RS.settingsDirty = false
 end
 
--- Вызывается каждый кадр из основного цикла
+-- Р’С‹Р·С‹РІР°РµС‚СЃСЏ РєР°Р¶РґС‹Р№ РєР°РґСЂ РёР· РѕСЃРЅРѕРІРЅРѕРіРѕ С†РёРєР»Р°
 function rsTick()
     if RS.trackEnabled and licPro() and os.clock() - RS.lastScan >= 0.5 then
         RS.lastScan = os.clock()
@@ -1314,12 +1314,12 @@ function rsTick()
     if RS.dirty and os.time() - RS.lastSave >= 60 then
         rsSaveSpots()
     end
-    if RS.settingsDirty and not isKeyDown(0x01) then -- ждём, пока отпустят мышь
+    if RS.settingsDirty and not isKeyDown(0x01) then -- Р¶РґС‘Рј, РїРѕРєР° РѕС‚РїСѓСЃС‚СЏС‚ РјС‹С€СЊ
         rsSaveSettings()
     end
 end
 
--- Сводка для вкладки (обновляется раз в секунду)
+-- РЎРІРѕРґРєР° РґР»СЏ РІРєР»Р°РґРєРё (РѕР±РЅРѕРІР»СЏРµС‚СЃСЏ СЂР°Р· РІ СЃРµРєСѓРЅРґСѓ)
 function rsRefreshSummary()
     local byType, withSamples, pending = {}, 0, {}
     for _, s in ipairs(RS.spots) do
@@ -1353,21 +1353,21 @@ end
 
 -- TOOLS_BLOCK_BEGIN
 -- ================================================================
--- Инструменты: оптимизация маршрутов, авто-маршрут, карта и цель бота
+-- РРЅСЃС‚СЂСѓРјРµРЅС‚С‹: РѕРїС‚РёРјРёР·Р°С†РёСЏ РјР°СЂС€СЂСѓС‚РѕРІ, Р°РІС‚Рѕ-РјР°СЂС€СЂСѓС‚, РєР°СЂС‚Р° Рё С†РµР»СЊ Р±РѕС‚Р°
 -- ================================================================
-BOT = {kind = nil, x = 0, y = 0, z = 0}   -- что бот делает сейчас: mine / ore / wait / route / afk
+BOT = {kind = nil, x = 0, y = 0, z = 0}   -- С‡С‚Рѕ Р±РѕС‚ РґРµР»Р°РµС‚ СЃРµР№С‡Р°СЃ: mine / ore / wait / route / afk
 
 local TL = {
-    optTol = imgui.new.float(1.5),     -- допуск упрощения, м
-    optGap = imgui.new.int(12),        -- максимальный шаг между точками, м
+    optTol = imgui.new.float(1.5),     -- РґРѕРїСѓСЃРє СѓРїСЂРѕС‰РµРЅРёСЏ, Рј
+    optGap = imgui.new.int(12),        -- РјР°РєСЃРёРјР°Р»СЊРЅС‹Р№ С€Р°Рі РјРµР¶РґСѓ С‚РѕС‡РєР°РјРё, Рј
     optSmooth = true,
     optClose = true,
-    arRadius = imgui.new.int(150),     -- радиус выборки мест вокруг игрока, м
-    arStep = imgui.new.int(8),         -- шаг дополнительных точек, м
+    arRadius = imgui.new.int(150),     -- СЂР°РґРёСѓСЃ РІС‹Р±РѕСЂРєРё РјРµСЃС‚ РІРѕРєСЂСѓРі РёРіСЂРѕРєР°, Рј
+    arStep = imgui.new.int(8),         -- С€Р°Рі РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… С‚РѕС‡РµРє, Рј
     arRespawn = true,
     maxNodes = 250,
-    speed = 6.0,                       -- м/с, для оценки времени круга
-    mineTime = 2.0,                    -- сек на добычу одной руды
+    speed = 6.0,                       -- Рј/СЃ, РґР»СЏ РѕС†РµРЅРєРё РІСЂРµРјРµРЅРё РєСЂСѓРіР°
+    mineTime = 2.0,                    -- СЃРµРє РЅР° РґРѕР±С‹С‡Сѓ РѕРґРЅРѕР№ СЂСѓРґС‹
     msg = nil,
     msgOk = true,
 }
@@ -1377,23 +1377,23 @@ local MAP = {
     showAll = false,
     showPlayers = true,
     showBot = true,
-    viewMeters = 250,                  -- ширина карты в метрах
-    cx = 0, cy = 0,                    -- центр, когда карта не следует за игроком
+    viewMeters = 250,                  -- С€РёСЂРёРЅР° РєР°СЂС‚С‹ РІ РјРµС‚СЂР°С…
+    cx = 0, cy = 0,                    -- С†РµРЅС‚СЂ, РєРѕРіРґР° РєР°СЂС‚Р° РЅРµ СЃР»РµРґСѓРµС‚ Р·Р° РёРіСЂРѕРєРѕРј
     zoomSlider = imgui.new.int(250),
-    cov = {},                          -- [номер маршрута] = {n, states, cursor}
+    cov = {},                          -- [РЅРѕРјРµСЂ РјР°СЂС€СЂСѓС‚Р°] = {n, states, cursor}
     grid = nil,
     gridAt = -100,
     gridCell = 25,
     W = 540, H = 290,
 }
 
--- ---------- Геометрия ----------
+-- ---------- Р“РµРѕРјРµС‚СЂРёСЏ ----------
 function toolsDist2d(ax, ay, bx, by)
     local dx, dy = ax - bx, ay - by
     return math.sqrt(dx * dx + dy * dy)
 end
 
--- расстояние от точки p до отрезка a-b на плоскости
+-- СЂР°СЃСЃС‚РѕСЏРЅРёРµ РѕС‚ С‚РѕС‡РєРё p РґРѕ РѕС‚СЂРµР·РєР° a-b РЅР° РїР»РѕСЃРєРѕСЃС‚Рё
 function toolsPointSegDist(p, a, b)
     local abx, aby = b.x - a.x, b.y - a.y
     local len2 = abx * abx + aby * aby
@@ -1416,13 +1416,13 @@ function toolsRouteLength(pts, closed)
     return len
 end
 
--- точки с действием (прыжок и т.д.) нельзя убирать; FORWARD убираем так же, как и обычные точки
+-- С‚РѕС‡РєРё СЃ РґРµР№СЃС‚РІРёРµРј (РїСЂС‹Р¶РѕРє Рё С‚.Рґ.) РЅРµР»СЊР·СЏ СѓР±РёСЂР°С‚СЊ; FORWARD СѓР±РёСЂР°РµРј С‚Р°Рє Р¶Рµ, РєР°Рє Рё РѕР±С‹С‡РЅС‹Рµ С‚РѕС‡РєРё
 function toolsIsAnchor(p)
     local a = p.action
     return a == "JUMP" or a == "LEFT" or a == "RIGHT" or a == "BACKWARD"
 end
 
--- ---------- Оптимизация записанных маршрутов ----------
+-- ---------- РћРїС‚РёРјРёР·Р°С†РёСЏ Р·Р°РїРёСЃР°РЅРЅС‹С… РјР°СЂС€СЂСѓС‚РѕРІ ----------
 function toolsSimplify(pts, tol)
     local n = #pts
     local keep = {}
@@ -1458,7 +1458,7 @@ function toolsSimplify(pts, tol)
     return out
 end
 
--- Лёгкое сглаживание маршрута (точки с действием не трогаем)
+-- Р›С‘РіРєРѕРµ СЃРіР»Р°Р¶РёРІР°РЅРёРµ РјР°СЂС€СЂСѓС‚Р° (С‚РѕС‡РєРё СЃ РґРµР№СЃС‚РІРёРµРј РЅРµ С‚СЂРѕРіР°РµРј)
 function toolsSmooth(pts)
     local n = #pts
     if n < 3 then return pts end
@@ -1477,7 +1477,7 @@ function toolsSmooth(pts)
     return out
 end
 
--- Добавляем промежуточные точки, чтобы шаг не превышал maxGap (нужно для поиска руды рядом с путём)
+-- Р”РѕР±Р°РІР»СЏРµРј РїСЂРѕРјРµР¶СѓС‚РѕС‡РЅС‹Рµ С‚РѕС‡РєРё, С‡С‚РѕР±С‹ С€Р°Рі РЅРµ РїСЂРµРІС‹С€Р°Р» maxGap (РЅСѓР¶РЅРѕ РґР»СЏ РїРѕРёСЃРєР° СЂСѓРґС‹ СЂСЏРґРѕРј СЃ РїСѓС‚С‘Рј)
 function toolsDensify(pts, maxGap, closed)
     local n = #pts
     local out = {}
@@ -1501,14 +1501,14 @@ function toolsDensify(pts, maxGap, closed)
     return out
 end
 
--- Копия маршрута index -> новый оптимизированный маршрут. Возвращает таблицу с итогами или nil, текст ошибки
+-- РљРѕРїРёСЏ РјР°СЂС€СЂСѓС‚Р° index -> РЅРѕРІС‹Р№ РѕРїС‚РёРјРёР·РёСЂРѕРІР°РЅРЅС‹Р№ РјР°СЂС€СЂСѓС‚. Р’РѕР·РІСЂР°С‰Р°РµС‚ С‚Р°Р±Р»РёС†Сѓ СЃ РёС‚РѕРіР°РјРё РёР»Рё nil, С‚РµРєСЃС‚ РѕС€РёР±РєРё
 function toolsOptimizeRoute(index, tol, maxGap, smooth, close)
     if not licPro() then
-        return nil, u8'Оптимизация маршрутов доступна по подписке Про'
+        return nil, u8'РћРїС‚РёРјРёР·Р°С†РёСЏ РјР°СЂС€СЂСѓС‚РѕРІ РґРѕСЃС‚СѓРїРЅР° РїРѕ РїРѕРґРїРёСЃРєРµ РџСЂРѕ'
     end
     local src = getRoutePoints(index)
     if #src < 3 then
-        return nil, u8"В маршруте слишком мало точек"
+        return nil, u8"Р’ РјР°СЂС€СЂСѓС‚Рµ СЃР»РёС€РєРѕРј РјР°Р»Рѕ С‚РѕС‡РµРє"
     end
     local pts = {}
     for i, p in ipairs(src) do
@@ -1517,7 +1517,7 @@ function toolsOptimizeRoute(index, tol, maxGap, smooth, close)
     local before = #pts
     local lenBefore = toolsRouteLength(pts, false)
 
-    -- 1) убираем стоячие точки
+    -- 1) СѓР±РёСЂР°РµРј СЃС‚РѕСЏС‡РёРµ С‚РѕС‡РєРё
     local kept = {pts[1]}
     for i = 2, #pts do
         local p, last = pts[i], kept[#kept]
@@ -1527,11 +1527,11 @@ function toolsOptimizeRoute(index, tol, maxGap, smooth, close)
     end
     pts = kept
 
-    -- 2) сглаживание, 3) убираем лишние точки на прямых
+    -- 2) СЃРіР»Р°Р¶РёРІР°РЅРёРµ, 3) СѓР±РёСЂР°РµРј Р»РёС€РЅРёРµ С‚РѕС‡РєРё РЅР° РїСЂСЏРјС‹С…
     if smooth then pts = toolsSmooth(pts) end
     pts = toolsSimplify(pts, tol)
 
-    -- 4) замыкаем в круг: хвост совпадает с началом, тогда одну точку убираем
+    -- 4) Р·Р°РјС‹РєР°РµРј РІ РєСЂСѓРі: С…РІРѕСЃС‚ СЃРѕРІРїР°РґР°РµС‚ СЃ РЅР°С‡Р°Р»РѕРј, С‚РѕРіРґР° РѕРґРЅСѓ С‚РѕС‡РєСѓ СѓР±РёСЂР°РµРј
     if close and #pts > 3 then
         local last = pts[#pts]
         if toolsDist2d(last.x, last.y, pts[1].x, pts[1].y) <= 3 and not toolsIsAnchor(last) then
@@ -1539,17 +1539,17 @@ function toolsOptimizeRoute(index, tol, maxGap, smooth, close)
         end
     end
 
-    -- 5) ограничиваем шаг
+    -- 5) РѕРіСЂР°РЅРёС‡РёРІР°РµРј С€Р°Рі
     pts = toolsDensify(pts, maxGap, close)
 
-    local name = getRouteName(index) .. u8" (опт.)"
+    local name = getRouteName(index) .. u8" (РѕРїС‚.)"
     table.insert(customRoutes, {name = name, points = pts, oreRadius = getRouteOreRadius(index)})
     saveCustomRoutesToFile()
     return {before = before, after = #pts, lenBefore = lenBefore,
             lenAfter = toolsRouteLength(pts, close), newIndex = getRouteCount()}
 end
 
--- ---------- Авто-маршрут по базе мест ----------
+-- ---------- РђРІС‚Рѕ-РјР°СЂС€СЂСѓС‚ РїРѕ Р±Р°Р·Рµ РјРµСЃС‚ ----------
 function toolsTwoOpt(order)
     local n = #order
     if n < 4 then return order end
@@ -1580,10 +1580,10 @@ function toolsTwoOpt(order)
     return order
 end
 
--- Строим маршрут по найденным местам руды вокруг (cx, cy)
+-- РЎС‚СЂРѕРёРј РјР°СЂС€СЂСѓС‚ РїРѕ РЅР°Р№РґРµРЅРЅС‹Рј РјРµСЃС‚Р°Рј СЂСѓРґС‹ РІРѕРєСЂСѓРі (cx, cy)
 function toolsBuildAutoRoute(cx, cy, radius, useRespawn, step)
     if not licPro() then
-        return nil, u8'Авто-маршрут доступен по подписке Про'
+        return nil, u8'РђРІС‚Рѕ-РјР°СЂС€СЂСѓС‚ РґРѕСЃС‚СѓРїРµРЅ РїРѕ РїРѕРґРїРёСЃРєРµ РџСЂРѕ'
     end
     local now = os.time()
     local nodes = {}
@@ -1598,14 +1598,14 @@ function toolsBuildAutoRoute(cx, cy, radius, useRespawn, step)
         end
     end
     if #nodes < 3 then
-        return nil, u8"Мало мест руды в базе (нужно хотя бы 3). Походи по шахте - база пополнится"
+        return nil, u8"РњР°Р»Рѕ РјРµСЃС‚ СЂСѓРґС‹ РІ Р±Р°Р·Рµ (РЅСѓР¶РЅРѕ С…РѕС‚СЏ Р±С‹ 3). РџРѕС…РѕРґРё РїРѕ С€Р°С…С‚Рµ - Р±Р°Р·Р° РїРѕРїРѕР»РЅРёС‚СЃСЏ"
     end
     table.sort(nodes, function(a, b) return a.d < b.d end)
     while #nodes > TL.maxNodes do
         table.remove(nodes)
     end
 
-    -- Жадный выбор: берём место, где раньше всего можно начать добычу (дорога + ожидание респавна)
+    -- Р–Р°РґРЅС‹Р№ РІС‹Р±РѕСЂ: Р±РµСЂС‘Рј РјРµСЃС‚Рѕ, РіРґРµ СЂР°РЅСЊС€Рµ РІСЃРµРіРѕ РјРѕР¶РЅРѕ РЅР°С‡Р°С‚СЊ РґРѕР±С‹С‡Сѓ (РґРѕСЂРѕРіР° + РѕР¶РёРґР°РЅРёРµ СЂРµСЃРїР°РІРЅР°)
     local order, used, t = {}, {}, 0
     local curX, curY = cx, cy
     for _ = 1, #nodes do
@@ -1625,7 +1625,7 @@ function toolsBuildAutoRoute(cx, cy, radius, useRespawn, step)
         curX, curY = nodes[best].x, nodes[best].y
     end
 
-    -- без учёта респавна идём по кругу с оптимизацией перестановкой
+    -- Р±РµР· СѓС‡С‘С‚Р° СЂРµСЃРїР°РІРЅР° РёРґС‘Рј РїРѕ РєСЂСѓРіСѓ СЃ РѕРїС‚РёРјРёР·Р°С†РёРµР№ РїРµСЂРµСЃС‚Р°РЅРѕРІРєРѕР№
     if not useRespawn then
         order = toolsTwoOpt(order)
         local bi, bd = 1, math.huge
@@ -1654,14 +1654,14 @@ function toolsBuildAutoRoute(cx, cy, radius, useRespawn, step)
     end
 
     local newIndex = getRouteCount() + 1
-    table.insert(customRoutes, {name = u8"Авто " .. newIndex .. u8" (" .. #order .. u8" м.)",
+    table.insert(customRoutes, {name = u8"РђРІС‚Рѕ " .. newIndex .. u8" (" .. #order .. u8" Рј.)",
                                 points = pts, oreRadius = 12})
     saveCustomRoutesToFile()
     return {spots = #order, points = #pts, length = length, loopSec = loopSec,
             maxMed = maxMed, newIndex = newIndex}
 end
 
--- ---------- Данные для карты ----------
+-- ---------- Р”Р°РЅРЅС‹Рµ РґР»СЏ РєР°СЂС‚С‹ ----------
 function mapRebuildGrid()
     local g, cell = {}, MAP.gridCell
     for i = 1, #RS.spots do
@@ -1678,7 +1678,7 @@ function mapRebuildGrid()
     MAP.gridAt = os.clock()
 end
 
--- 0 = рядом нет живой руды (пустой участок), 1 = места есть, но живой руды нет, 2 = руда есть
+-- 0 = СЂСЏРґРѕРј РЅРµС‚ Р¶РёРІРѕР№ СЂСѓРґС‹ (РїСѓСЃС‚РѕР№ СѓС‡Р°СЃС‚РѕРє), 1 = РјРµСЃС‚Р° РµСЃС‚СЊ, РЅРѕ Р¶РёРІРѕР№ СЂСѓРґС‹ РЅРµС‚, 2 = СЂСѓРґР° РµСЃС‚СЊ
 function mapPointState(x, y, radius)
     local cell = MAP.gridCell
     local r2 = radius * radius
@@ -1701,7 +1701,7 @@ function mapPointState(x, y, radius)
     return state
 end
 
--- считаем покрытие порциями, чтобы не просаживать кадры
+-- СЃС‡РёС‚Р°РµРј РїРѕРєСЂС‹С‚РёРµ РїРѕСЂС†РёСЏРјРё, С‡С‚РѕР±С‹ РЅРµ РїСЂРѕСЃР°Р¶РёРІР°С‚СЊ РєР°РґСЂС‹
 function mapUpdateCoverage(routeIdx, budget)
     if not MAP.grid or os.clock() - MAP.gridAt > 2 then
         mapRebuildGrid()
@@ -1724,7 +1724,7 @@ function mapUpdateCoverage(routeIdx, budget)
     return c
 end
 
--- Показать всё: маршрут, игрок и ближайшие места руды
+-- РџРѕРєР°Р·Р°С‚СЊ РІСЃС‘: РјР°СЂС€СЂСѓС‚, РёРіСЂРѕРє Рё Р±Р»РёР¶Р°Р№С€РёРµ РјРµСЃС‚Р° СЂСѓРґС‹
 function mapFitAll()
     local minx, maxx, miny, maxy
     local function add(x, y)
@@ -1752,22 +1752,22 @@ end
 
 -- TG_BLOCK_BEGIN
 -- ================================================================
--- TELEGRAM: уведомления и управление ботом из Telegram
--- Сеть работает в отдельном потоке (effil), игру не подвешивает.
--- Всё держится в одной таблице TG (чтобы не превышать лимит локальных переменных Lua).
+-- TELEGRAM: СѓРІРµРґРѕРјР»РµРЅРёСЏ Рё СѓРїСЂР°РІР»РµРЅРёРµ Р±РѕС‚РѕРј РёР· Telegram
+-- РЎРµС‚СЊ СЂР°Р±РѕС‚Р°РµС‚ РІ РѕС‚РґРµР»СЊРЅРѕРј РїРѕС‚РѕРєРµ (effil), РёРіСЂСѓ РЅРµ РїРѕРґРІРµС€РёРІР°РµС‚.
+-- Р’СЃС‘ РґРµСЂР¶РёС‚СЃСЏ РІ РѕРґРЅРѕР№ С‚Р°Р±Р»РёС†Рµ TG (С‡С‚РѕР±С‹ РЅРµ РїСЂРµРІС‹С€Р°С‚СЊ Р»РёРјРёС‚ Р»РѕРєР°Р»СЊРЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С… Lua).
 -- ================================================================
 local TG = {
     enabled = false,
     token = "",
     chatId = "",
-    -- события
+    -- СЃРѕР±С‹С‚РёСЏ
     evAdmin = true, evStuck = true, evTeleport = true, evAfk = true,
     evStartStop = true, evGoal = true, evHourly = true,
     hourlyMin = 60,
     stuckSec = 25,
     stopOnTp = false,
-    cmds = false,                      -- принимать команды из Telegram
-    -- рабочее
+    cmds = false,                      -- РїСЂРёРЅРёРјР°С‚СЊ РєРѕРјР°РЅРґС‹ РёР· Telegram
+    -- СЂР°Р±РѕС‡РµРµ
     thread = nil, ctl = nil, outCh = nil, inCh = nil,
     transport = nil,
     status = "",
@@ -1790,7 +1790,7 @@ local TG = {
     chatBuf = ffi.new("char[32]"),
     hourlySlider = imgui.new.int(60),
     stuckSlider = imgui.new.int(25),
-    -- эмодзи в сообщениях: байты UTF-8 в виде escape-последовательностей
+    -- СЌРјРѕРґР·Рё РІ СЃРѕРѕР±С‰РµРЅРёСЏС…: Р±Р°Р№С‚С‹ UTF-8 РІ РІРёРґРµ escape-РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚РµР№
     E = {
         ok = "\xE2\x9C\x85", warn = "\xE2\x9A\xA0\xEF\xB8\x8F", stop = "\xF0\x9F\x9B\x91",
         play = "\xE2\x96\xB6\xEF\xB8\x8F", pick = "\xE2\x9B\x8F\xEF\xB8\x8F", beer = "\xF0\x9F\x8D\xBA",
@@ -1799,7 +1799,7 @@ local TG = {
     },
 }
 
--- ---------- Поток: сеть, внутри нет доступа к игре (самодостаточная функция, без upvalue) ----------
+-- ---------- РџРѕС‚РѕРє: СЃРµС‚СЊ, РІРЅСѓС‚СЂРё РЅРµС‚ РґРѕСЃС‚СѓРїР° Рє РёРіСЂРµ (СЃР°РјРѕРґРѕСЃС‚Р°С‚РѕС‡РЅР°СЏ С„СѓРЅРєС†РёСЏ, Р±РµР· upvalue) ----------
 TG.threadMain = function(ctl, outCh, inCh)
     local effil = require('effil')
     local https, ltn12, requests
@@ -1868,7 +1868,7 @@ TG.threadMain = function(ctl, outCh, inCh)
     end
 end
 
--- ---------- Строки в JSON ----------
+-- ---------- РЎС‚СЂРѕРєРё РІ JSON ----------
 function tgUtf8Char(cp)
     if cp < 0x80 then return string.char(cp) end
     if cp < 0x800 then return string.char(0xC0 + math.floor(cp / 64), 0x80 + cp % 64) end
@@ -1880,7 +1880,7 @@ function tgUtf8Char(cp)
                        0x80 + math.floor(cp / 64) % 64, 0x80 + cp % 64)
 end
 
--- оставляем только корректный UTF-8 (иначе Telegram вернёт 400)
+-- РѕСЃС‚Р°РІР»СЏРµРј С‚РѕР»СЊРєРѕ РєРѕСЂСЂРµРєС‚РЅС‹Р№ UTF-8 (РёРЅР°С‡Рµ Telegram РІРµСЂРЅС‘С‚ 400)
 function tgUtf8Clean(s)
     local out, i, n = {}, 1, #s
     while i <= n do
@@ -1927,7 +1927,7 @@ function tgJsonEsc(s)
     end))
 end
 
--- читаем JSON-строку; pos - первая буква после открывающей кавычки. Возвращает строку и позицию после закрывающей
+-- С‡РёС‚Р°РµРј JSON-СЃС‚СЂРѕРєСѓ; pos - РїРµСЂРІР°СЏ Р±СѓРєРІР° РїРѕСЃР»Рµ РѕС‚РєСЂС‹РІР°СЋС‰РµР№ РєР°РІС‹С‡РєРё. Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃС‚СЂРѕРєСѓ Рё РїРѕР·РёС†РёСЋ РїРѕСЃР»Рµ Р·Р°РєСЂС‹РІР°СЋС‰РµР№
 function tgReadJsonString(s, pos)
     local out, i, n = {}, pos, #s
     local simple = {n = "\n", r = "\r", t = "\t", b = "\b", f = "\f", ['"'] = '"', ["\\"] = "\\", ["/"] = "/"}
@@ -1966,7 +1966,7 @@ function tgReadJsonString(s, pos)
     return nil
 end
 
--- Текст игры (CP1251) -> UTF-8 для Telegram, без цветовых кодов {RRGGBB}
+-- РўРµРєСЃС‚ РёРіСЂС‹ (CP1251) -> UTF-8 РґР»СЏ Telegram, Р±РµР· С†РІРµС‚РѕРІС‹С… РєРѕРґРѕРІ {RRGGBB}
 function tgToUtf8(s)
     s = tostring(s or ""):gsub("{%x%x%x%x%x%x}", "")
     local ok, res = pcall(function() return u8(s) end)
@@ -1983,7 +1983,7 @@ function tgBuildSend(chat, text)
     return '{"chat_id":' .. id .. ',"text":"' .. tgJsonEsc(text) .. '","disable_web_page_preview":true}'
 end
 
--- ---------- Разбор getUpdates ----------
+-- ---------- Р Р°Р·Р±РѕСЂ getUpdates ----------
 function tgParseUpdates(body)
     local list, maxId, starts, p = {}, nil, {}, 1
     while true do
@@ -2019,7 +2019,7 @@ function tgParseUpdates(body)
     return list, maxId
 end
 
--- ---------- Настройки ----------
+-- ---------- РќР°СЃС‚СЂРѕР№РєРё ----------
 function tgTrim(s)
     return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 end
@@ -2085,8 +2085,8 @@ function tgReady()
     return TG.token ~= "" and TG.chatId ~= ""
 end
 
--- ---------- Очередь отправки ----------
--- key + cooldown: не слать одно и то же событие чаще, чем раз в cooldown секунд
+-- ---------- РћС‡РµСЂРµРґСЊ РѕС‚РїСЂР°РІРєРё ----------
+-- key + cooldown: РЅРµ СЃР»Р°С‚СЊ РѕРґРЅРѕ Рё С‚Рѕ Р¶Рµ СЃРѕР±С‹С‚РёРµ С‡Р°С‰Рµ, С‡РµРј СЂР°Р· РІ cooldown СЃРµРєСѓРЅРґ
 function tgSend(text, key, cooldown, force)
     if not licPro() then return false end
     if not (force or TG.enabled) or not tgReady() then return false end
@@ -2103,13 +2103,13 @@ end
 
 function tgFlush()
     if #TG.queue == 0 or not TG.outCh or not tgReady() then return end
-    if os.clock() - TG.lastSend < 1.2 then return end   -- Telegram: не чаще ~1 сообщения в секунду в один чат
+    if os.clock() - TG.lastSend < 1.2 then return end   -- Telegram: РЅРµ С‡Р°С‰Рµ ~1 СЃРѕРѕР±С‰РµРЅРёСЏ РІ СЃРµРєСѓРЅРґСѓ РІ РѕРґРёРЅ С‡Р°С‚
     local item = table.remove(TG.queue, 1)
     TG.lastSend = os.clock()
     TG.outCh:push({method = "sendMessage", body = tgBuildSend(TG.chatId, item.text), tag = "msg"})
 end
 
--- ---------- Поток ----------
+-- ---------- РџРѕС‚РѕРє ----------
 function tgEnsureThread()
     if TG.thread then return true end
     if TG.failAt and os.clock() - TG.failAt < 10 then return false end
@@ -2136,7 +2136,7 @@ function tgStop()
     TG.transport = nil
 end
 
--- Сообщения из потока
+-- РЎРѕРѕР±С‰РµРЅРёСЏ РёР· РїРѕС‚РѕРєР°
 function tgPump()
     if not TG.inCh then return end
     for _ = 1, 20 do
@@ -2145,23 +2145,23 @@ function tgPump()
         if ev.t == "transport" then
             TG.transport = ev.name
             if ev.name == "" then
-                TG.status = "Нет библиотеки для HTTPS (нужны ssl.https + ltn12 или requests)"
+                TG.status = "РќРµС‚ Р±РёР±Р»РёРѕС‚РµРєРё РґР»СЏ HTTPS (РЅСѓР¶РЅС‹ ssl.https + ltn12 РёР»Рё requests)"
                 TG.statusOk = false
             end
         elseif ev.t == "sent" then
             if ev.ok then
                 TG.sent = TG.sent + 1
-                TG.status = "Отправлено"
+                TG.status = "РћС‚РїСЂР°РІР»РµРЅРѕ"
                 TG.statusOk = true
             else
                 TG.failed = TG.failed + 1
-                TG.status = "Ошибка отправки: " .. tostring(ev.err)
+                TG.status = "РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё: " .. tostring(ev.err)
                 TG.statusOk = false
             end
         elseif ev.t == "updates" then
             tgHandleUpdates(ev.body)
         elseif ev.t == "pollerr" then
-            TG.status = "Ошибка опроса: " .. tostring(ev.err)
+            TG.status = "РћС€РёР±РєР° РѕРїСЂРѕСЃР°: " .. tostring(ev.err)
             TG.statusOk = false
         end
     end
@@ -2169,14 +2169,14 @@ end
 
 function tgHandleUpdates(body)
     if not body:find('"ok":true', 1, true) then
-        TG.status = "Ошибка опроса: ответ без ok"
+        TG.status = "РћС€РёР±РєР° РѕРїСЂРѕСЃР°: РѕС‚РІРµС‚ Р±РµР· ok"
         TG.statusOk = false
         return
     end
     local list, maxId = tgParseUpdates(body)
     if maxId and TG.ctl then TG.ctl.offset = maxId + 1 end
     if TG.skipBacklog then
-        -- старые сообщения, накопившиеся пока нас не было, пропускаем
+        -- СЃС‚Р°СЂС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ, РЅР°РєРѕРїРёРІС€РёРµСЃСЏ РїРѕРєР° РЅР°СЃ РЅРµ Р±С‹Р»Рѕ, РїСЂРѕРїСѓСЃРєР°РµРј
         if #list == 0 then TG.skipBacklog = false end
         return
     end
@@ -2191,13 +2191,13 @@ function tgHandleMessage(u)
     if TG.discover then
         TG.found = {id = u.chat, name = u.chatName or ""}
     end
-    -- команды принимаем только из заданного чата
+    -- РєРѕРјР°РЅРґС‹ РїСЂРёРЅРёРјР°РµРј С‚РѕР»СЊРєРѕ РёР· Р·Р°РґР°РЅРЅРѕРіРѕ С‡Р°С‚Р°
     if not (TG.enabled and TG.cmds and TG.chatId ~= "" and u.chat == TG.chatId) then return end
     local reply = tgRunCommand(u.text)
     if reply then tgSend(reply, nil, 0, true) end
 end
 
--- ---------- Тексты ----------
+-- ---------- РўРµРєСЃС‚С‹ ----------
 function tgNick()
     local ok, id = pcall(function() return select(2, sampGetPlayerIdByCharHandle(PLAYER_PED)) end)
     if ok and id then
@@ -2227,11 +2227,11 @@ function tgFmtDuration(sec)
 end
 
 function tgBotStateText()
-    if not mode then return u8"Остановлен" end
-    if isAfk or BOT.kind == "afk" then return u8"АФК-отдых" end
-    local names = {mine = u8"Копает руду", ore = u8"Идёт к руде", wait = u8"Ждёт респавна у места",
-                   route = u8"Идёт по маршруту"}
-    return names[BOT.kind] or u8"Работает"
+    if not mode then return u8"РћСЃС‚Р°РЅРѕРІР»РµРЅ" end
+    if isAfk or BOT.kind == "afk" then return u8"РђР¤Рљ-РѕС‚РґС‹С…" end
+    local names = {mine = u8"РљРѕРїР°РµС‚ СЂСѓРґСѓ", ore = u8"РРґС‘С‚ Рє СЂСѓРґРµ", wait = u8"Р–РґС‘С‚ СЂРµСЃРїР°РІРЅР° Сѓ РјРµСЃС‚Р°",
+                   route = u8"РРґС‘С‚ РїРѕ РјР°СЂС€СЂСѓС‚Сѓ"}
+    return names[BOT.kind] or u8"Р Р°Р±РѕС‚Р°РµС‚"
 end
 
 function tgPendingCount()
@@ -2246,44 +2246,44 @@ function tgStatusText()
     local E, t = TG.E, tgTotals()
     local px, py, pz = getCharCoordinates(PLAYER_PED)
     local lines = {}
-    lines[#lines + 1] = tgHead() .. (mode and E.play or E.stop) .. " " .. u8"Бот: " .. tgBotStateText()
-    lines[#lines + 1] = E.pin .. " " .. u8"Маршрут: " .. getRouteName(activeRouteIndex) ..
+    lines[#lines + 1] = tgHead() .. (mode and E.play or E.stop) .. " " .. u8"Р‘РѕС‚: " .. tgBotStateText()
+    lines[#lines + 1] = E.pin .. " " .. u8"РњР°СЂС€СЂСѓС‚: " .. getRouteName(activeRouteIndex) ..
         " (" .. currentRoutePoint .. "/" .. #getActiveRoute() .. ")"
-    lines[#lines + 1] = E.pick .. " " .. u8"Добыто: " .. t.sum .. u8" из цели " .. SliderInt[0]
+    lines[#lines + 1] = E.pick .. " " .. u8"Р”РѕР±С‹С‚Рѕ: " .. t.sum .. u8" РёР· С†РµР»Рё " .. SliderInt[0]
     lines[#lines + 1] = tgOreLine(t)
     if mode and TG.sessionStart then
-        lines[#lines + 1] = u8"В работе: " .. tgFmtDuration(os.time() - TG.sessionStart)
+        lines[#lines + 1] = u8"Р’ СЂР°Р±РѕС‚Рµ: " .. tgFmtDuration(os.time() - TG.sessionStart)
     end
-    lines[#lines + 1] = u8"Позиция: " .. math.floor(px) .. ", " .. math.floor(py) .. ", " .. math.floor(pz)
-    lines[#lines + 1] = E.beer .. " " .. u8"Авто-пиво: " .. (beerEnabled and u8"вкл" or u8"выкл")
-    lines[#lines + 1] = u8"База руды: мест " .. #RS.spots .. u8", ждут респавна " .. tgPendingCount()
+    lines[#lines + 1] = u8"РџРѕР·РёС†РёСЏ: " .. math.floor(px) .. ", " .. math.floor(py) .. ", " .. math.floor(pz)
+    lines[#lines + 1] = E.beer .. " " .. u8"РђРІС‚Рѕ-РїРёРІРѕ: " .. (beerEnabled and u8"РІРєР»" or u8"РІС‹РєР»")
+    lines[#lines + 1] = u8"Р‘Р°Р·Р° СЂСѓРґС‹: РјРµСЃС‚ " .. #RS.spots .. u8", Р¶РґСѓС‚ СЂРµСЃРїР°РІРЅР° " .. tgPendingCount()
     return table.concat(lines, "\n")
 end
 
 function tgReportText()
     local E, t = TG.E, tgTotals()
-    local lines = {tgHead() .. E.chart .. " " .. u8"Отчёт"}
-    lines[#lines + 1] = u8"Всего добыто: " .. t.sum .. u8" из цели " .. SliderInt[0]
+    local lines = {tgHead() .. E.chart .. " " .. u8"РћС‚С‡С‘С‚"}
+    lines[#lines + 1] = u8"Р’СЃРµРіРѕ РґРѕР±С‹С‚Рѕ: " .. t.sum .. u8" РёР· С†РµР»Рё " .. SliderInt[0]
     lines[#lines + 1] = tgOreLine(t)
     if TG.reportBase and TG.reportAt then
         local dt = math.max(1, os.time() - TG.reportAt)
         local d = t.sum - TG.reportBase.sum
-        lines[#lines + 1] = u8"За " .. math.floor(dt / 60) .. u8" мин: +" .. d .. " (" ..
-            math.floor(d * 3600 / dt) .. u8" в час)"
+        lines[#lines + 1] = u8"Р—Р° " .. math.floor(dt / 60) .. u8" РјРёРЅ: +" .. d .. " (" ..
+            math.floor(d * 3600 / dt) .. u8" РІ С‡Р°СЃ)"
     end
     if mode and TG.sessionStart then
-        lines[#lines + 1] = u8"В работе: " .. tgFmtDuration(os.time() - TG.sessionStart)
+        lines[#lines + 1] = u8"Р’ СЂР°Р±РѕС‚Рµ: " .. tgFmtDuration(os.time() - TG.sessionStart)
     end
-    lines[#lines + 1] = u8"Бот: " .. tgBotStateText() .. u8", маршрут: " .. getRouteName(activeRouteIndex)
+    lines[#lines + 1] = u8"Р‘РѕС‚: " .. tgBotStateText() .. u8", РјР°СЂС€СЂСѓС‚: " .. getRouteName(activeRouteIndex)
     return table.concat(lines, "\n")
 end
 
 function tgHelpText()
-    return u8"Команды:\n/status - состояние бота\n/report - отчёт за период\n/run - запустить бота\n/stop - остановить бота\n" ..
-           u8"/route - список маршрутов, /route N - выбрать маршрут\n/beer on|off - авто-пиво\n/pos - где персонаж"
+    return u8"РљРѕРјР°РЅРґС‹:\n/status - СЃРѕСЃС‚РѕСЏРЅРёРµ Р±РѕС‚Р°\n/report - РѕС‚С‡С‘С‚ Р·Р° РїРµСЂРёРѕРґ\n/run - Р·Р°РїСѓСЃС‚РёС‚СЊ Р±РѕС‚Р°\n/stop - РѕСЃС‚Р°РЅРѕРІРёС‚СЊ Р±РѕС‚Р°\n" ..
+           u8"/route - СЃРїРёСЃРѕРє РјР°СЂС€СЂСѓС‚РѕРІ, /route N - РІС‹Р±СЂР°С‚СЊ РјР°СЂС€СЂСѓС‚\n/beer on|off - Р°РІС‚Рѕ-РїРёРІРѕ\n/pos - РіРґРµ РїРµСЂСЃРѕРЅР°Р¶"
 end
 
--- ---------- Команды ----------
+-- ---------- РљРѕРјР°РЅРґС‹ ----------
 function tgRunCommand(text)
     local cmd, arg = text:match("^/(%w+)@?[%w_]*%s*(.-)%s*$")
     if not cmd then return nil end
@@ -2296,48 +2296,48 @@ function tgRunCommand(text)
     elseif cmd == "report" then
         return tgReportText()
     elseif cmd == "run" then
-        if mode then return tgHead() .. u8"Бот уже запущен" end
+        if mode then return tgHead() .. u8"Р‘РѕС‚ СѓР¶Рµ Р·Р°РїСѓС‰РµРЅ" end
         mode = true
-        return tgHead() .. E.play .. " " .. u8"Бот запущен"
+        return tgHead() .. E.play .. " " .. u8"Р‘РѕС‚ Р·Р°РїСѓС‰РµРЅ"
     elseif cmd == "stop" then
-        if not mode then return tgHead() .. u8"Бот уже остановлен" end
+        if not mode then return tgHead() .. u8"Р‘РѕС‚ СѓР¶Рµ РѕСЃС‚Р°РЅРѕРІР»РµРЅ" end
         mode = false
-        return tgHead() .. E.stop .. " " .. u8"Бот остановлен"
+        return tgHead() .. E.stop .. " " .. u8"Р‘РѕС‚ РѕСЃС‚Р°РЅРѕРІР»РµРЅ"
     elseif cmd == "route" then
         local n = tonumber(arg)
         if arg == "" then
-            local lines = {tgHead() .. u8"Маршруты:"}
+            local lines = {tgHead() .. u8"РњР°СЂС€СЂСѓС‚С‹:"}
             for i = 1, math.min(getRouteCount(), 25) do
                 lines[#lines + 1] = (i == activeRouteIndex and "> " or "  ") .. i .. ". " .. getRouteName(i) ..
-                    " (" .. #getRoutePoints(i) .. u8" т.)"
+                    " (" .. #getRoutePoints(i) .. u8" С‚.)"
             end
-            lines[#lines + 1] = u8"Выбрать: /route N"
+            lines[#lines + 1] = u8"Р’С‹Р±СЂР°С‚СЊ: /route N"
             return table.concat(lines, "\n")
         end
         if not n or n < 1 or n > getRouteCount() or n ~= math.floor(n) then
-            return tgHead() .. E.warn .. " " .. u8"Нет такого маршрута. Всего: " .. getRouteCount()
+            return tgHead() .. E.warn .. " " .. u8"РќРµС‚ С‚Р°РєРѕРіРѕ РјР°СЂС€СЂСѓС‚Р°. Р’СЃРµРіРѕ: " .. getRouteCount()
         end
         activeRouteIndex = n
         currentRoutePoint = 1
-        return tgHead() .. E.ok .. " " .. u8"Выбран маршрут " .. n .. ": " .. getRouteName(n)
+        return tgHead() .. E.ok .. " " .. u8"Р’С‹Р±СЂР°РЅ РјР°СЂС€СЂСѓС‚ " .. n .. ": " .. getRouteName(n)
     elseif cmd == "beer" then
         if arg == "on" then beerEnabled = true
         elseif arg == "off" then beerEnabled = false
         else beerEnabled = not beerEnabled end
-        return tgHead() .. E.beer .. " " .. u8"Авто-пиво " .. (beerEnabled and u8"включено" or u8"выключено")
+        return tgHead() .. E.beer .. " " .. u8"РђРІС‚Рѕ-РїРёРІРѕ " .. (beerEnabled and u8"РІРєР»СЋС‡РµРЅРѕ" or u8"РІС‹РєР»СЋС‡РµРЅРѕ")
     elseif cmd == "pos" then
         local x, y, z = getCharCoordinates(PLAYER_PED)
         return tgHead() .. E.pin .. string.format(" %.1f, %.1f, %.1f", x, y, z)
     end
-    return tgHead() .. E.warn .. " " .. u8"Неизвестная команда. /help - список"
+    return tgHead() .. E.warn .. " " .. u8"РќРµРёР·РІРµСЃС‚РЅР°СЏ РєРѕРјР°РЅРґР°. /help - СЃРїРёСЃРѕРє"
 end
 
--- ---------- События ----------
+-- ---------- РЎРѕР±С‹С‚РёСЏ ----------
 function tgNotifyAdmin(text)
     if not TG.enabled or not TG.evAdmin then return end
     local clean = tgToUtf8(text)
     if #clean > 300 then clean = tgUtf8Clean(clean:sub(1, 300)) end
-    tgSend(tgHead() .. TG.E.alarm .. " " .. u8"Администратор в игре:\n" .. clean, "admin", 20)
+    tgSend(tgHead() .. TG.E.alarm .. " " .. u8"РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ РІ РёРіСЂРµ:\n" .. clean, "admin", 20)
 end
 
 function tgEvents()
@@ -2348,12 +2348,12 @@ function tgEvents()
         TG.booted = true
         TG.lastMode, TG.lastAfk = mode, isAfk
         TG.lastPos = {px, py, pz}
-        tgSend(tgHead() .. E.ok .. " " .. u8"Telegram подключён. /help - список команд" ..
-               (TG.cmds and "" or u8" (команды выключены)"), nil, 0)
+        tgSend(tgHead() .. E.ok .. " " .. u8"Telegram РїРѕРґРєР»СЋС‡С‘РЅ. /help - СЃРїРёСЃРѕРє РєРѕРјР°РЅРґ" ..
+               (TG.cmds and "" or u8" (РєРѕРјР°РЅРґС‹ РІС‹РєР»СЋС‡РµРЅС‹)"), nil, 0)
         return
     end
 
-    -- запуск / остановка
+    -- Р·Р°РїСѓСЃРє / РѕСЃС‚Р°РЅРѕРІРєР°
     if mode ~= TG.lastMode then
         TG.lastMode = mode
         if mode then
@@ -2363,39 +2363,39 @@ function tgEvents()
             TG.stuckRef = nil
         end
         if TG.evStartStop then
-            tgSend(tgHead() .. (mode and (E.play .. " " .. u8"Бот запущен") or (E.stop .. " " .. u8"Бот остановлен")), nil, 0)
+            tgSend(tgHead() .. (mode and (E.play .. " " .. u8"Р‘РѕС‚ Р·Р°РїСѓС‰РµРЅ") or (E.stop .. " " .. u8"Р‘РѕС‚ РѕСЃС‚Р°РЅРѕРІР»РµРЅ")), nil, 0)
         end
     end
 
-    -- АФК-отдых
+    -- РђР¤Рљ-РѕС‚РґС‹С…
     if isAfk ~= TG.lastAfk then
         TG.lastAfk = isAfk
         if TG.evAfk then
-            tgSend(tgHead() .. E.zzz .. " " .. (isAfk and u8"АФК-отдых начался" or u8"Бот продолжает, АФК закончился"), nil, 0)
+            tgSend(tgHead() .. E.zzz .. " " .. (isAfk and u8"РђР¤Рљ-РѕС‚РґС‹С… РЅР°С‡Р°Р»СЃСЏ" or u8"Р‘РѕС‚ РїСЂРѕРґРѕР»Р¶Р°РµС‚, РђР¤Рљ Р·Р°РєРѕРЅС‡РёР»СЃСЏ"), nil, 0)
         end
     end
 
-    -- цель добычи
+    -- С†РµР»СЊ РґРѕР±С‹С‡Рё
     if TG.evGoal and mode then
         local sum = tgTotals().sum
         if sum >= SliderInt[0] then
             if not TG.goalSent then
                 TG.goalSent = true
-                tgSend(tgHead() .. E.flag .. " " .. u8"Цель добычи выполнена: " .. sum .. u8" из " .. SliderInt[0], nil, 0)
+                tgSend(tgHead() .. E.flag .. " " .. u8"Р¦РµР»СЊ РґРѕР±С‹С‡Рё РІС‹РїРѕР»РЅРµРЅР°: " .. sum .. u8" РёР· " .. SliderInt[0], nil, 0)
             end
         else
             TG.goalSent = false
         end
     end
 
-    -- периодический отчёт
+    -- РїРµСЂРёРѕРґРёС‡РµСЃРєРёР№ РѕС‚С‡С‘С‚
     if TG.evHourly and mode and TG.nextReport and now >= TG.nextReport then
         tgSend(tgReportText(), nil, 0)
         TG.reportBase, TG.reportAt = tgTotals(), now
         TG.nextReport = now + TG.hourlyMin * 60
     end
 
-    -- телепорт / откат: резкий скачок координат
+    -- С‚РµР»РµРїРѕСЂС‚ / РѕС‚РєР°С‚: СЂРµР·РєРёР№ СЃРєР°С‡РѕРє РєРѕРѕСЂРґРёРЅР°С‚
     if TG.lastPos then
         local dx, dy, dz = px - TG.lastPos[1], py - TG.lastPos[2], pz - TG.lastPos[3]
         local d = math.sqrt(dx * dx + dy * dy + dz * dz)
@@ -2406,14 +2406,14 @@ function tgEvents()
                 stopped = true
             end
             if TG.evTeleport or stopped then
-                tgSend(tgHead() .. E.warn .. " " .. u8"Резкий скачок координат на " .. math.floor(d) .. u8" м (телепорт или откат?)" ..
-                       (stopped and (" " .. u8"Бот остановлен.") or ""), "tp", 60)
+                tgSend(tgHead() .. E.warn .. " " .. u8"Р РµР·РєРёР№ СЃРєР°С‡РѕРє РєРѕРѕСЂРґРёРЅР°С‚ РЅР° " .. math.floor(d) .. u8" Рј (С‚РµР»РµРїРѕСЂС‚ РёР»Рё РѕС‚РєР°С‚?)" ..
+                       (stopped and (" " .. u8"Р‘РѕС‚ РѕСЃС‚Р°РЅРѕРІР»РµРЅ.") or ""), "tp", 60)
             end
         end
     end
     TG.lastPos = {px, py, pz}
 
-    -- застревание: бот в пути, но не двигается
+    -- Р·Р°СЃС‚СЂРµРІР°РЅРёРµ: Р±РѕС‚ РІ РїСѓС‚Рё, РЅРѕ РЅРµ РґРІРёРіР°РµС‚СЃСЏ
     if mode and not isAfk and (BOT.kind == "route" or BOT.kind == "ore") then
         local ref = TG.stuckRef
         local moved = ref and math.sqrt((px - ref.x) ^ 2 + (py - ref.y) ^ 2) or 0
@@ -2421,8 +2421,8 @@ function tgEvents()
             TG.stuckRef = {x = px, y = py, t = now}
         elseif now - ref.t >= TG.stuckSec then
             if TG.evStuck then
-                tgSend(tgHead() .. E.warn .. " " .. u8"Бот стоит на месте уже " .. (now - ref.t) .. u8" сек. (" ..
-                       tgBotStateText() .. u8", маршрут " .. getRouteName(activeRouteIndex) .. ")", "stuck", 300)
+                tgSend(tgHead() .. E.warn .. " " .. u8"Р‘РѕС‚ СЃС‚РѕРёС‚ РЅР° РјРµСЃС‚Рµ СѓР¶Рµ " .. (now - ref.t) .. u8" СЃРµРє. (" ..
+                       tgBotStateText() .. u8", РјР°СЂС€СЂСѓС‚ " .. getRouteName(activeRouteIndex) .. ")", "stuck", 300)
             end
             ref.t = now
         end
@@ -2431,7 +2431,7 @@ function tgEvents()
     end
 end
 
--- Вызывается каждый кадр из основного цикла, работа только при включённом Telegram
+-- Р’С‹Р·С‹РІР°РµС‚СЃСЏ РєР°Р¶РґС‹Р№ РєР°РґСЂ РёР· РѕСЃРЅРѕРІРЅРѕРіРѕ С†РёРєР»Р°, СЂР°Р±РѕС‚Р° С‚РѕР»СЊРєРѕ РїСЂРё РІРєР»СЋС‡С‘РЅРЅРѕРј Telegram
 function tgTick()
     if not licPro() then
         if TG.thread then tgStop() end
@@ -2461,14 +2461,14 @@ end
 
 function tgSendTest()
     if TG.token == "" or TG.chatId == "" then
-        TG.status = "Сначала введи токен и chat_id и нажми Сохранить"
+        TG.status = "РЎРЅР°С‡Р°Р»Р° РІРІРµРґРё С‚РѕРєРµРЅ Рё chat_id Рё РЅР°Р¶РјРё РЎРѕС…СЂР°РЅРёС‚СЊ"
         TG.statusOk = false
         return
     end
     TG.testUntil = os.clock() + 30
-    TG.status = "Отправляю тест..."
+    TG.status = "РћС‚РїСЂР°РІР»СЏСЋ С‚РµСЃС‚..."
     TG.statusOk = true
-    tgSend(tgHead() .. TG.E.ok .. " " .. u8"Тест связи: всё работает", nil, 0, true)
+    tgSend(tgHead() .. TG.E.ok .. " " .. u8"РўРµСЃС‚ СЃРІСЏР·Рё: РІСЃС‘ СЂР°Р±РѕС‚Р°РµС‚", nil, 0, true)
 end
 -- TG_BLOCK_END
 
@@ -2506,24 +2506,21 @@ end
 
 -- LIC_BLOCK_BEGIN
 -- ================================================================
--- ПОДПИСКА "ПРО"
--- Платные функции: авто-пиво, ИИ пути, ожидание респавна у места, Telegram, оптимизация маршрутов.
--- Ключ проверяется на вашем сервере: GET LIC_SERVER?key=КЛЮЧ&hwid=HWID&v=1
---   ответ "OK|1767225600"  (время окончания подписки, unix) или "ERR|invalid" / "ERR|expired" / "ERR|hwid"
--- LIC_DEV_UNLOCK = true открывает Про без ключа (только для ваших тестов). В версии для людей должно быть false.
--- Адрес сервера проверки впишите в LIC_SERVER (https://.../api/check).
+-- РџРћР”РџРРЎРљРђ "РџР Рћ"
+-- РџР»Р°С‚РЅС‹Рµ С„СѓРЅРєС†РёРё: Р°РІС‚Рѕ-РїРёРІРѕ, РР РїСѓС‚Рё, РѕР¶РёРґР°РЅРёРµ СЂРµСЃРїР°РІРЅР° Сѓ РјРµСЃС‚Р°, Telegram, РѕРїС‚РёРјРёР·Р°С†РёСЏ РјР°СЂС€СЂСѓС‚РѕРІ.
+-- РљР»СЋС‡ РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ РЅР° РІР°С€РµРј СЃРµСЂРІРµСЂРµ: GET LIC_SERVER?key=РљР›Р®Р§&hwid=HWID&v=1
+--   РѕС‚РІРµС‚ "OK|1767225600"  (РІСЂРµРјСЏ РѕРєРѕРЅС‡Р°РЅРёСЏ РїРѕРґРїРёСЃРєРё, unix) РёР»Рё "ERR|invalid" / "ERR|expired" / "ERR|hwid"
+-- LIC_DEV_UNLOCK = true РѕС‚РєСЂС‹РІР°РµС‚ РџСЂРѕ Р±РµР· РєР»СЋС‡Р° (С‚РѕР»СЊРєРѕ РґР»СЏ РІР°С€РёС… С‚РµСЃС‚РѕРІ). Р’ РІРµСЂСЃРёРё РґР»СЏ Р»СЋРґРµР№ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ false.
+-- РђРґСЂРµСЃ СЃРµСЂРІРµСЂР° РїСЂРѕРІРµСЂРєРё РІРїРёС€РёС‚Рµ РІ LIC_SERVER (https://.../api/check).
 -- ================================================================
 LIC_SERVER = "https://rabotyaga-site.vercel.app/api/check"
-LIC_SITE = "https://rabotyaga-site.vercel.app"   -- страница покупки подписки
--- Запасные адреса проверки (зеркала). Если основной адрес не открывается без VPN, скрипт
--- по очереди пробует эти. Впишите сюда адрес вида "https://ваш-домен.ru/api/check".
+LIC_SITE = "https://rabotyaga-site.vercel.app"   -- СЃС‚СЂР°РЅРёС†Р° РїРѕРєСѓРїРєРё РїРѕРґРїРёСЃРєРё
 LIC_MIRRORS = {
     "https://rm-check.dima67maslina.workers.dev/api/check",
-    -- "https://ваш-домен.ru/api/check",
 }
 LIC_DEV_UNLOCK = false
-LIC_RECHECK = 6 * 3600        -- как часто перепроверять ключ, сек
-LIC_GRACE = 24 * 3600         -- сколько работать без связи с сервером после последней успешной проверки, сек
+LIC_RECHECK = 6 * 3600        -- РєР°Рє С‡Р°СЃС‚Рѕ РїРµСЂРµРїСЂРѕРІРµСЂСЏС‚СЊ РєР»СЋС‡, СЃРµРє
+LIC_GRACE = 24 * 3600         -- СЃРєРѕР»СЊРєРѕ СЂР°Р±РѕС‚Р°С‚СЊ Р±РµР· СЃРІСЏР·Рё СЃ СЃРµСЂРІРµСЂРѕРј РїРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµР№ СѓСЃРїРµС€РЅРѕР№ РїСЂРѕРІРµСЂРєРё, СЃРµРє
 
 LIC = {
     key = "",
@@ -2561,7 +2558,7 @@ function licLoad()
     ffi.copy(LIC.hwidBuf, LIC.hwid:sub(1, 31))
     ffi.copy(LIC.siteBuf, LIC_SITE:sub(1, 127))
     if LIC_DEV_UNLOCK then
-        sampAddChatMessage('{ff9933}[Подписка]: {ffffff}РЕЖИМ РАЗРАБОТЧИКА - функции Про открыты без ключа', -1)
+        sampAddChatMessage('{ff9933}[РџРѕРґРїРёСЃРєР°]: {ffffff}Р Р•Р–РРњ Р РђР—Р РђР‘РћРўР§РРљРђ - С„СѓРЅРєС†РёРё РџСЂРѕ РѕС‚РєСЂС‹С‚С‹ Р±РµР· РєР»СЋС‡Р°', -1)
     end
 end
 
@@ -2590,7 +2587,7 @@ end
 function licDeny(name)
     if os.clock() - LIC.lastDeny < 8 then return end
     LIC.lastDeny = os.clock()
-    sampAddChatMessage('{cc66ff}[Подписка]: {ffffff}Функция "' .. name .. '" доступна по подписке Про (вкладка "Подписка")', -1)
+    sampAddChatMessage('{cc66ff}[РџРѕРґРїРёСЃРєР°]: {ffffff}Р¤СѓРЅРєС†РёСЏ "' .. name .. '" РґРѕСЃС‚СѓРїРЅР° РїРѕ РїРѕРґРїРёСЃРєРµ РџСЂРѕ (РІРєР»Р°РґРєР° "РџРѕРґРїРёСЃРєР°")', -1)
 end
 
 function licUrlEnc(s)
@@ -2600,20 +2597,20 @@ end
 function licStartCheck()
     if LIC.th then return end
     if LIC_SERVER == "" then
-        LIC.msg = "Сервер проверки не настроен"
+        LIC.msg = "РЎРµСЂРІРµСЂ РїСЂРѕРІРµСЂРєРё РЅРµ РЅР°СЃС‚СЂРѕРµРЅ"
         return
     end
     if LIC.key == "" then
-        LIC.msg = "Введите ключ"
+        LIC.msg = "Р’РІРµРґРёС‚Рµ РєР»СЋС‡"
         return
     end
     local qs = "?key=" .. licUrlEnc(LIC.key) .. "&hwid=" .. licUrlEnc(LIC.hwid) .. "&v=1"
-    local urls = {}
-    for _, base in ipairs(LIC_MIRRORS) do
-        if type(base) == "string" and base ~= "" then urls[#urls + 1] = base .. qs end
-    end
-    urls[#urls + 1] = LIC_SERVER .. qs
-    local url = table.concat(urls, "\n")
+local urls = {}
+for _, base in ipairs(LIC_MIRRORS) do
+    if type(base) == "string" and base ~= "" then urls[#urls + 1] = base .. qs end
+end
+urls[#urls + 1] = LIC_SERVER .. qs
+local url = table.concat(urls, "\n")
     local ok, th = pcall(function()
         local effil = require('effil')
         return effil.thread(function(list)
@@ -2653,50 +2650,54 @@ function licStartCheck()
     if ok and th then
         LIC.th = th
         LIC.state = 'checking'
-        LIC.msg = "Проверка ключа..."
+        LIC.msg = "РџСЂРѕРІРµСЂРєР° РєР»СЋС‡Р°..."
     else
-        LIC.msg = "Не удалось запустить проверку"
+        LIC.msg = "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ РїСЂРѕРІРµСЂРєСѓ"
+        LIC.doneCount = (LIC.doneCount or 0) + 1
         LIC.nextAt = os.clock() + 120
     end
 end
 
 function licHandle(ok, body, code, err)
     LIC.state = 'idle'
+    LIC.doneCount = (LIC.doneCount or 0) + 1
     if ok and code == 200 then
         local exp = tonumber(tostring(body):match("^%s*OK|(%d+)"))
         if exp then
             LIC.untilTs = exp
             LIC.okAt = os.time()
             if exp > os.time() then
-                LIC.msg = "Подписка активна"
+                LIC.msg = "РџРѕРґРїРёСЃРєР° Р°РєС‚РёРІРЅР°"
             else
-                LIC.msg = "Срок подписки истёк"
+                LIC.msg = "РЎСЂРѕРє РїРѕРґРїРёСЃРєРё РёСЃС‚С‘Рє"
             end
             LIC.nextAt = os.clock() + LIC_RECHECK
             return
         end
         local reason = tostring(body):match("^%s*ERR|([%w_%-]+)") or ""
         local texts = {
-            invalid = "Ключ не найден",
-            expired = "Срок ключа истёк",
-            hwid = "Ключ привязан к другому компьютеру",
-            banned = "Ключ заблокирован",
+            invalid = "РљР»СЋС‡ РЅРµ РЅР°Р№РґРµРЅ",
+            expired = "РЎСЂРѕРє РєР»СЋС‡Р° РёСЃС‚С‘Рє",
+            hwid = "РљР»СЋС‡ РїСЂРёРІСЏР·Р°РЅ Рє РґСЂСѓРіРѕРјСѓ РєРѕРјРїСЊСЋС‚РµСЂСѓ",
+            banned = "РљР»СЋС‡ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ",
         }
         LIC.untilTs = 0
-        LIC.msg = texts[reason] or ("Ключ не принят" .. (reason ~= "" and (": " .. reason) or ""))
+        LIC.msg = texts[reason] or ("РљР»СЋС‡ РЅРµ РїСЂРёРЅСЏС‚" .. (reason ~= "" and (": " .. reason) or ""))
         LIC.nextAt = os.clock() + LIC_RECHECK
     else
-        LIC.msg = "Нет связи с сервером проверки"
+        LIC.msg = "РќРµС‚ СЃРІСЏР·Рё СЃ СЃРµСЂРІРµСЂРѕРј РїСЂРѕРІРµСЂРєРё"
         LIC.nextAt = os.clock() + 300
     end
 end
 
 function licTick()
+    updTick()
     if LIC.th then
         local okS, st = pcall(function() return LIC.th:status() end)
         if not okS then
             LIC.th = nil
             LIC.state = 'idle'
+            LIC.doneCount = (LIC.doneCount or 0) + 1
             return
         end
         if st == 'completed' then
@@ -2706,7 +2707,8 @@ function licTick()
         elseif st == 'failed' or st == 'canceled' then
             LIC.th = nil
             LIC.state = 'idle'
-            LIC.msg = "Ошибка проверки"
+            LIC.doneCount = (LIC.doneCount or 0) + 1
+            LIC.msg = "РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё"
             LIC.nextAt = os.clock() + 300
         end
         return
@@ -2720,24 +2722,245 @@ function licTick()
         licStartCheck()
     end
 end
+-- UPD_BLOCK_BEGIN
+-- ================================================================
+-- РђР’РўРћРћР‘РќРћР’Р›Р•РќРР• РЎРљР РРџРўРђ
+-- РЎР°Р№С‚ РѕС‚РґР°С‘С‚ РєРѕРЅС‚СЂРѕР»СЊРЅСѓСЋ СЃСѓРјРјСѓ Р°РєС‚СѓР°Р»СЊРЅРѕРіРѕ С„Р°Р№Р»Р° (/api/version). Р•СЃР»Рё РѕРЅР° РѕС‚Р»РёС‡Р°РµС‚СЃСЏ РѕС‚
+-- СЃСѓРјРјС‹ СЌС‚РѕРіРѕ С„Р°Р№Р»Р°, СЃРєСЂРёРїС‚ СЃРєР°С‡РёРІР°РµС‚ РЅРѕРІС‹Р№ С„Р°Р№Р» СЃ СЃР°Р№С‚Р°, РїСЂРѕРІРµСЂСЏРµС‚ РµРіРѕ, РґРµР»Р°РµС‚ РєРѕРїРёСЋ .bak
+-- Рё РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµС‚ СЃРµР±СЏ. Р§С‚РѕР±С‹ РІС‹РїСѓСЃС‚РёС‚СЊ РѕР±РЅРѕРІР»РµРЅРёРµ, РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ Р·Р°РјРµРЅРёС‚СЊ С„Р°Р№Р» РІ public СЃР°Р№С‚Р°.
+-- РћС‚РєР»СЋС‡РёС‚СЊ: UPD_ENABLED = false, Р»РёР±Рѕ СЃРѕР·РґР°С‚СЊ РїСѓСЃС‚РѕР№ С„Р°Р№Р» moonloader/config/rm_noupdate.txt
+-- (РЅР° СЃРІРѕС‘Рј РєРѕРјРїСЊСЋС‚РµСЂРµ РґР»СЏ СЂР°Р·СЂР°Р±РѕС‚РєРё, С‡С‚РѕР±С‹ РїСЂР°РІРєРё РЅРµ Р·Р°С‚РёСЂР°Р»РёСЃСЊ).
+-- ================================================================
+UPD_ENABLED = true
+UPD_FILE = "/Rabotyagamain.lua"
+UPD_RECHECK = 3 * 3600
+UPD = {th = nil, mode = nil, started = os.clock(), nextAt = 0, inited = false, reloadAt = nil, manual = false, wantCrc = nil}
+
+function updSay(msg)
+    pcall(function()
+        if isSampAvailable and isSampAvailable() then sampAddChatMessage(msg, 0xFFCC66FF) end
+    end)
+end
+
+function updCrc32(s)
+    local bit = require('bit')
+    if not UPD_CRCTBL then
+        UPD_CRCTBL = {}
+        for i = 0, 255 do
+            local c = i
+            for _ = 1, 8 do
+                if bit.band(c, 1) == 1 then c = bit.bxor(bit.rshift(c, 1), 0xEDB88320) else c = bit.rshift(c, 1) end
+            end
+            UPD_CRCTBL[i] = c
+        end
+    end
+    local tbl, band, bxor, rshift = UPD_CRCTBL, bit.band, bit.bxor, bit.rshift
+    local c = 0xFFFFFFFF
+    for i = 1, #s do
+        c = bxor(tbl[band(bxor(c, s:byte(i)), 0xFF)], rshift(c, 8))
+    end
+    return bit.tohex(bxor(c, 0xFFFFFFFF), 8)
+end
+
+function updCfgPath(name)
+    return getWorkingDirectory() .. "\\config\\" .. name
+end
+
+function updDisabledByFlag()
+    local f = io.open(updCfgPath("rm_noupdate.txt"), "rb")
+    if f then f:close() return true end
+    return false
+end
+
+function updReadFile(path)
+    local f = io.open(path, "rb")
+    if not f then return nil end
+    local d = f:read("*a")
+    f:close()
+    return d
+end
+
+function updRoots()
+    local t = {}
+    if type(LIC_MIRRORS) == "table" then
+        for _, b in ipairs(LIC_MIRRORS) do
+            if type(b) == "string" and b ~= "" then t[#t + 1] = (b:gsub("/api/check/*$", "")) end
+        end
+    end
+    if LIC_SITE and LIC_SITE ~= "" then t[#t + 1] = (LIC_SITE:gsub("/+$", "")) end
+    return t
+end
+
+function updStart(mode, path)
+    if UPD.th then return end
+    local urls = {}
+    for _, r in ipairs(updRoots()) do
+        urls[#urls + 1] = r .. path .. (path:find("?", 1, true) and "&" or "?") .. "t=" .. os.time()
+    end
+    if #urls == 0 then return end
+    local list = table.concat(urls, "\n")
+    local ok, th = pcall(function()
+        local effil = require('effil')
+        return effil.thread(function(list)
+            local https, ltn12, requests
+            local okS, s = pcall(require, 'ssl.https')
+            if okS then https = s end
+            local okL, l = pcall(require, 'ltn12')
+            if okL then ltn12 = l end
+            local okR, r = pcall(require, 'requests')
+            if okR then requests = r end
+            if https then pcall(function() require('socket.http').TIMEOUT = 15 end) end
+            local lastErr = "no-transport"
+            for u in tostring(list):gmatch("[^\n]+") do
+                if https and ltn12 then
+                    local resp = {}
+                    local okc, ok2, code = pcall(https.request, {url = u, method = "GET", sink = ltn12.sink.table(resp)})
+                    if not okc then lastErr = tostring(ok2)
+                    elseif not ok2 then lastErr = tostring(code)
+                    elseif tonumber(code) == 200 then
+                        return true, table.concat(resp), 200, ""
+                    else
+                        lastErr = "http " .. tostring(code)
+                    end
+                elseif requests then
+                    local okc, resp = pcall(requests.get, {url = u})
+                    if not okc then lastErr = tostring(resp)
+                    elseif tonumber(resp.status_code) == 200 then
+                        return true, tostring(resp.text), 200, ""
+                    else
+                        lastErr = "http " .. tostring(resp.status_code)
+                    end
+                end
+            end
+            return false, "", 0, lastErr
+        end)(list)
+    end)
+    if ok and th then
+        UPD.th = th
+        UPD.mode = mode
+    else
+        UPD.nextAt = os.clock() + 600
+    end
+end
+
+function updHandle(ok, body, code)
+    local mode = UPD.mode
+    UPD.mode = nil
+    local manual = UPD.manual
+    if not (ok and code == 200) then
+        UPD.nextAt = os.clock() + 1800
+        if manual or mode == 'file' then updSay("РђРІС‚РѕРѕР±РЅРѕРІР»РµРЅРёРµ: РЅРµС‚ СЃРІСЏР·Рё СЃ СЃРµСЂРІРµСЂРѕРј.") end
+        UPD.manual = false
+        return
+    end
+    if mode == 'info' then
+        UPD.nextAt = os.clock() + UPD_RECHECK
+        local crc = tostring(body):match("^%s*OK|(%x+)|%d+")
+        if not crc then UPD.manual = false return end
+        local mine = updReadFile(thisScript().path)
+        if mine and updCrc32(mine) == crc then
+            if manual then updSay("РђРІС‚РѕРѕР±РЅРѕРІР»РµРЅРёРµ: Сѓ РІР°СЃ РїРѕСЃР»РµРґРЅСЏСЏ РІРµСЂСЃРёСЏ СЃРєСЂРёРїС‚Р°.") end
+            UPD.manual = false
+            return
+        end
+        local applied = updReadFile(updCfgPath("rm_update.txt"))
+        if applied and applied:match("%x+") == crc then
+            UPD.manual = false
+            return
+        end
+        UPD.wantCrc = crc
+        updSay("РђРІС‚РѕРѕР±РЅРѕРІР»РµРЅРёРµ: РІС‹С€Р»Р° РЅРѕРІР°СЏ РІРµСЂСЃРёСЏ, СЃРєР°С‡РёРІР°СЋ...")
+        updStart('file', UPD_FILE)
+    elseif mode == 'file' then
+        UPD.manual = false
+        local data = tostring(body)
+        local f, err = loadstring(data)
+        if #data < 50000 or not data:find("LIC_SERVER", 1, true) or not f or updCrc32(data) ~= UPD.wantCrc then
+            updSay("РђРІС‚РѕРѕР±РЅРѕРІР»РµРЅРёРµ: СЃРєР°С‡Р°РЅРЅС‹Р№ С„Р°Р№Р» РЅРµ РїСЂРѕС€С‘Р» РїСЂРѕРІРµСЂРєСѓ, РѕР±РЅРѕРІР»РµРЅРёРµ РѕС‚РјРµРЅРµРЅРѕ.")
+            UPD.nextAt = os.clock() + 3600
+            return
+        end
+        local path = thisScript().path
+        local old = updReadFile(path)
+        if old then
+            local b = io.open(path .. ".bak", "wb")
+            if b then b:write(old) b:close() end
+        end
+        local w = io.open(path, "wb")
+        if not w then
+            updSay("РђРІС‚РѕРѕР±РЅРѕРІР»РµРЅРёРµ: РЅРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїРёСЃР°С‚СЊ С„Р°Р№Р» СЃРєСЂРёРїС‚Р°.")
+            UPD.nextAt = os.clock() + 3600
+            return
+        end
+        w:write(data)
+        w:close()
+        local m = io.open(updCfgPath("rm_update.txt"), "wb")
+        if m then m:write(UPD.wantCrc) m:close() end
+        updSay("РђРІС‚РѕРѕР±РЅРѕРІР»РµРЅРёРµ: СЃРєСЂРёРїС‚ РѕР±РЅРѕРІР»С‘РЅ, РїРµСЂРµР·Р°РіСЂСѓР·РєР°...")
+        UPD.reloadAt = os.clock() + 2
+    end
+end
+
+function updTick()
+    if not UPD_ENABLED then return end
+    if not UPD.inited then
+        local ok = pcall(function()
+            sampRegisterChatCommand("rmupd", function()
+                UPD.manual = true
+                UPD.nextAt = 0
+                updSay("РђРІС‚РѕРѕР±РЅРѕРІР»РµРЅРёРµ: РїСЂРѕРІРµСЂСЏСЋ...")
+            end)
+        end)
+        if ok then UPD.inited = true end
+    end
+    if UPD.reloadAt then
+        if os.clock() >= UPD.reloadAt then
+            UPD.reloadAt = nil
+            pcall(function() thisScript():reload() end)
+        end
+        return
+    end
+    if UPD.th then
+        local okS, st = pcall(function() return UPD.th:status() end)
+        if not okS then UPD.th = nil return end
+        if st == 'completed' then
+            local okG, a, b, c = pcall(function() return UPD.th:get() end)
+            UPD.th = nil
+            if okG then updHandle(a, b, c) else updHandle(false, "", 0) end
+        elseif st == 'failed' or st == 'canceled' then
+            UPD.th = nil
+            UPD.mode = nil
+            UPD.nextAt = os.clock() + 1800
+        end
+        return
+    end
+    if os.clock() - UPD.started > 15 and os.clock() >= UPD.nextAt then
+        if updDisabledByFlag() then
+            UPD.nextAt = os.clock() + 600
+        else
+            updStart('info', "/api/version")
+        end
+    end
+end
+-- UPD_BLOCK_END
 -- LIC_BLOCK_END
 
 -- NAV_BLOCK_BEGIN
 -- ================================================================
--- ИИ ПУТИ: анализ поверхности и обход препятствий
--- Бот идёт, а позиция не меняется -> сначала прыжок, если не помогло -> поиск обхода.
--- Обход ищется лучами (processLineOfSight): какие направления свободны, нет ли обрыва.
--- Если и обход не помог несколько раз - цель пропускается (руда в чёрный список, точка маршрута пропускается).
--- Всё держится в одной таблице NAV (чтобы не превышать лимит локальных переменных Lua).
+-- РР РџРЈРўР: Р°РЅР°Р»РёР· РїРѕРІРµСЂС…РЅРѕСЃС‚Рё Рё РѕР±С…РѕРґ РїСЂРµРїСЏС‚СЃС‚РІРёР№
+-- Р‘РѕС‚ РёРґС‘С‚, Р° РїРѕР·РёС†РёСЏ РЅРµ РјРµРЅСЏРµС‚СЃСЏ -> СЃРЅР°С‡Р°Р»Р° РїСЂС‹Р¶РѕРє, РµСЃР»Рё РЅРµ РїРѕРјРѕРіР»Рѕ -> РїРѕРёСЃРє РѕР±С…РѕРґР°.
+-- РћР±С…РѕРґ РёС‰РµС‚СЃСЏ Р»СѓС‡Р°РјРё (processLineOfSight): РєР°РєРёРµ РЅР°РїСЂР°РІР»РµРЅРёСЏ СЃРІРѕР±РѕРґРЅС‹, РЅРµС‚ Р»Рё РѕР±СЂС‹РІР°.
+-- Р•СЃР»Рё Рё РѕР±С…РѕРґ РЅРµ РїРѕРјРѕРі РЅРµСЃРєРѕР»СЊРєРѕ СЂР°Р· - С†РµР»СЊ РїСЂРѕРїСѓСЃРєР°РµС‚СЃСЏ (СЂСѓРґР° РІ С‡С‘СЂРЅС‹Р№ СЃРїРёСЃРѕРє, С‚РѕС‡РєР° РјР°СЂС€СЂСѓС‚Р° РїСЂРѕРїСѓСЃРєР°РµС‚СЃСЏ).
+-- Р’СЃС‘ РґРµСЂР¶РёС‚СЃСЏ РІ РѕРґРЅРѕР№ С‚Р°Р±Р»РёС†Рµ NAV (С‡С‚РѕР±С‹ РЅРµ РїСЂРµРІС‹С€Р°С‚СЊ Р»РёРјРёС‚ Р»РѕРєР°Р»СЊРЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С… Lua).
 -- ================================================================
 NAV = {
     enabled = true,
-    stuckTime = 1.2,         -- сек без движения до срабатывания
-    minMove = 0.9,           -- меньше этого за stuckTime = стоим на месте, м
-    maxJumps = 2,            -- сколько прыжков пробуем до обхода
-    detourLen = 5,           -- максимальная длина обхода, м
-    maxFails = 3,            -- сколько неудачных обходов до пропуска цели
-    draw = true,             -- рисовать линию обхода в мире
+    stuckTime = 1.2,         -- СЃРµРє Р±РµР· РґРІРёР¶РµРЅРёСЏ РґРѕ СЃСЂР°Р±Р°С‚С‹РІР°РЅРёСЏ
+    minMove = 0.9,           -- РјРµРЅСЊС€Рµ СЌС‚РѕРіРѕ Р·Р° stuckTime = СЃС‚РѕРёРј РЅР° РјРµСЃС‚Рµ, Рј
+    maxJumps = 2,            -- СЃРєРѕР»СЊРєРѕ РїСЂС‹Р¶РєРѕРІ РїСЂРѕР±СѓРµРј РґРѕ РѕР±С…РѕРґР°
+    detourLen = 5,           -- РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ РґР»РёРЅР° РѕР±С…РѕРґР°, Рј
+    maxFails = 3,            -- СЃРєРѕР»СЊРєРѕ РЅРµСѓРґР°С‡РЅС‹С… РѕР±С…РѕРґРѕРІ РґРѕ РїСЂРѕРїСѓСЃРєР° С†РµР»Рё
+    draw = true,             -- СЂРёСЃРѕРІР°С‚СЊ Р»РёРЅРёСЋ РѕР±С…РѕРґР° РІ РјРёСЂРµ
     state = 'free',          -- free / jump / detour
     lastCall = nil,
     refX = 0, refY = 0, refT = nil,
@@ -2745,7 +2968,7 @@ NAV = {
     dh = 0, dsx = 0, dsy = 0, dt0 = 0, dlen = 5, dside = 0,
     fails = 0, lastStuckAt = -100, lastDetourEnd = -100,
     badSide = 0, badSideUntil = 0,
-    bad = {},                -- временно недоступные цели {x, y, t}
+    bad = {},                -- РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРЅС‹Рµ С†РµР»Рё {x, y, t}
     info = "",
     conv = nil,
     stats = {jumps = 0, detours = 0, freed = 0, skipped = 0},
@@ -2756,10 +2979,10 @@ NAV = {
     settingsDirty = false,
 }
 
--- Добыча руды: бот подходит вплотную и копает, когда стоит на руде
+-- Р”РѕР±С‹С‡Р° СЂСѓРґС‹: Р±РѕС‚ РїРѕРґС…РѕРґРёС‚ РІРїР»РѕС‚РЅСѓСЋ Рё РєРѕРїР°РµС‚, РєРѕРіРґР° СЃС‚РѕРёС‚ РЅР° СЂСѓРґРµ
 MINE = {
-    dist = 0.7,              -- копаем, когда до руды (по земле) не больше этого, м
-    fallback = 0.9,          -- если дальше не подойти (руда с коллизией) - копаем через столько сек у руды
+    dist = 0.7,              -- РєРѕРїР°РµРј, РєРѕРіРґР° РґРѕ СЂСѓРґС‹ (РїРѕ Р·РµРјР»Рµ) РЅРµ Р±РѕР»СЊС€Рµ СЌС‚РѕРіРѕ, Рј
+    fallback = 0.9,          -- РµСЃР»Рё РґР°Р»СЊС€Рµ РЅРµ РїРѕРґРѕР№С‚Рё (СЂСѓРґР° СЃ РєРѕР»Р»РёР·РёРµР№) - РєРѕРїР°РµРј С‡РµСЂРµР· СЃС‚РѕР»СЊРєРѕ СЃРµРє Сѓ СЂСѓРґС‹
     nearSince = nil,
     sDist = imgui.new.float(0.7),
 }
@@ -2796,7 +3019,7 @@ function navAngDiff(a, b)
     return (a - b + 180) % 360 - 180
 end
 
--- Подбираем формулу направления под getHeadingFromVector2d, чтобы лучи шли туда, куда смотрит бот
+-- РџРѕРґР±РёСЂР°РµРј С„РѕСЂРјСѓР»Сѓ РЅР°РїСЂР°РІР»РµРЅРёСЏ РїРѕРґ getHeadingFromVector2d, С‡С‚РѕР±С‹ Р»СѓС‡Рё С€Р»Рё С‚СѓРґР°, РєСѓРґР° СЃРјРѕС‚СЂРёС‚ Р±РѕС‚
 function navCalibrate()
     local maps = {
         function(h) return -math.sin(h), math.cos(h) end,
@@ -2834,8 +3057,8 @@ function navHitPos(cp)
     return nil
 end
 
--- Расстояние до препятствия по лучу на высоте zoff от центра персонажа (не больше len).
--- ign: цель (руда), её саму препятствием не считаем.
+-- Р Р°СЃСЃС‚РѕСЏРЅРёРµ РґРѕ РїСЂРµРїСЏС‚СЃС‚РІРёСЏ РїРѕ Р»СѓС‡Сѓ РЅР° РІС‹СЃРѕС‚Рµ zoff РѕС‚ С†РµРЅС‚СЂР° РїРµСЂСЃРѕРЅР°Р¶Р° (РЅРµ Р±РѕР»СЊС€Рµ len).
+-- ign: С†РµР»СЊ (СЂСѓРґР°), РµС‘ СЃР°РјСѓ РїСЂРµРїСЏС‚СЃС‚РІРёРµРј РЅРµ СЃС‡РёС‚Р°РµРј.
 function navRayLen(x, y, z, h, len, zoff, ign)
     local dx, dy = navDir(h)
     local ok, res, cp = pcall(processLineOfSight, x, y, z + zoff, x + dx * len, y + dy * len, z + zoff,
@@ -2843,18 +3066,18 @@ function navRayLen(x, y, z, h, len, zoff, ign)
     if not ok or not res then return len end
     local hx, hy = navHitPos(cp)
     if not hx then return len end
-    if ign and toolsDist2d(hx, hy, ign.x, ign.y) < 1.4 then return len end
+    if ign and toolsDist2d(hx, hy, ign.x, ign.y) < (ign.r or 1.4) then return len end
     return math.min(len, toolsDist2d(x, y, hx, hy))
 end
 
--- Свободная длина направления: смотрим на уровне колена и груди
+-- РЎРІРѕР±РѕРґРЅР°СЏ РґР»РёРЅР° РЅР°РїСЂР°РІР»РµРЅРёСЏ: СЃРјРѕС‚СЂРёРј РЅР° СѓСЂРѕРІРЅРµ РєРѕР»РµРЅР° Рё РіСЂСѓРґРё
 function navClearLen(x, y, z, h, len, ign)
     local a = navRayLen(x, y, z, h, len, -0.5, ign)
     local b = navRayLen(x, y, z, h, len, 0.3, ign)
     return math.min(a, b)
 end
 
--- low = невысокое препятствие (бордюр, ящик), wall = стена, none = ничего не видно
+-- low = РЅРµРІС‹СЃРѕРєРѕРµ РїСЂРµРїСЏС‚СЃС‚РІРёРµ (Р±РѕСЂРґСЋСЂ, СЏС‰РёРє), wall = СЃС‚РµРЅР°, none = РЅРёС‡РµРіРѕ РЅРµ РІРёРґРЅРѕ
 function navObstacleKind(x, y, z, h, ign)
     local knee = navRayLen(x, y, z, h, 1.3, -0.5, ign) < 1.25
     local chest = navRayLen(x, y, z, h, 1.3, 0.3, ign) < 1.25
@@ -2864,7 +3087,7 @@ function navObstacleKind(x, y, z, h, ign)
     return 'none'
 end
 
--- Есть ли земля впереди на разумной высоте (не обрыв и не яма)
+-- Р•СЃС‚СЊ Р»Рё Р·РµРјР»СЏ РІРїРµСЂРµРґРё РЅР° СЂР°Р·СѓРјРЅРѕР№ РІС‹СЃРѕС‚Рµ (РЅРµ РѕР±СЂС‹РІ Рё РЅРµ СЏРјР°)
 function navGroundOk(x, y, z, h, dist)
     local dx, dy = navDir(h)
     local ok, a, b = pcall(getGroundZFor3dCoord, x + dx * dist, y + dy * dist, z)
@@ -2926,7 +3149,7 @@ function navStartDetour(px, py, pz, desired, ign)
     NAV.refX, NAV.refY, NAV.refT = px, py, now
     NAV.state = 'detour'
     NAV.stats.detours = NAV.stats.detours + 1
-    NAV.info = string.format("Обход: поворот на %d град., длина %.1f м", bestTh, NAV.dlen)
+    NAV.info = string.format("РћР±С…РѕРґ: РїРѕРІРѕСЂРѕС‚ РЅР° %d РіСЂР°Рґ., РґР»РёРЅР° %.1f Рј", bestTh, NAV.dlen)
 end
 
 function navGiveUp(kind, obj)
@@ -2936,22 +3159,22 @@ function navGiveUp(kind, obj)
     NAV.refT = nil
     if kind == 'ore' and obj then
         NAV.bad[#NAV.bad + 1] = {x = obj[1], y = obj[2], t = os.clock() + 45}
-        NAV.info = "Руда недоступна, пропускаю на 45 сек"
+        NAV.info = "Р СѓРґР° РЅРµРґРѕСЃС‚СѓРїРЅР°, РїСЂРѕРїСѓСЃРєР°СЋ РЅР° 45 СЃРµРє"
     elseif kind == 'wait' and obj then
         obj.navBlockedUntil = os.clock() + 60
-        NAV.info = "К месту не пройти, больше не жду его"
+        NAV.info = "Рљ РјРµСЃС‚Сѓ РЅРµ РїСЂРѕР№С‚Рё, Р±РѕР»СЊС€Рµ РЅРµ Р¶РґСѓ РµРіРѕ"
     else
         local route = getActiveRoute()
         currentRoutePoint = currentRoutePoint + 1
         if currentRoutePoint > #route then currentRoutePoint = 1 end
-        NAV.info = "Точка маршрута недоступна, иду к следующей"
+        NAV.info = "РўРѕС‡РєР° РјР°СЂС€СЂСѓС‚Р° РЅРµРґРѕСЃС‚СѓРїРЅР°, РёРґСѓ Рє СЃР»РµРґСѓСЋС‰РµР№"
     end
-    sampAddChatMessage('{cc66ff}[ИИ пути]: {ffffff}' .. NAV.info, -1)
+    sampAddChatMessage('{cc66ff}[РР РїСѓС‚Рё]: {ffffff}' .. NAV.info, -1)
     tgSend(tgHead() .. TG.E.warn .. " " .. u8(NAV.info), "navskip", 120)
 end
 
--- Главная функция: куда повернуться и нужно ли сейчас прыгать.
--- Вызывается каждый кадр, пока бот идёт к цели tx, ty (kind: route / ore / wait).
+-- Р“Р»Р°РІРЅР°СЏ С„СѓРЅРєС†РёСЏ: РєСѓРґР° РїРѕРІРµСЂРЅСѓС‚СЊСЃСЏ Рё РЅСѓР¶РЅРѕ Р»Рё СЃРµР№С‡Р°СЃ РїСЂС‹РіР°С‚СЊ.
+-- Р’С‹Р·С‹РІР°РµС‚СЃСЏ РєР°Р¶РґС‹Р№ РєР°РґСЂ, РїРѕРєР° Р±РѕС‚ РёРґС‘С‚ Рє С†РµР»Рё tx, ty (kind: route / ore / wait).
 function navSteer(tx, ty, kind, obj)
     local px, py, pz = getCharCoordinates(PLAYER_PED)
     local desired = getHeadingFromVector2d(tx - px, ty - py)
@@ -2966,7 +3189,24 @@ function navSteer(tx, ty, kind, obj)
         NAV.state = 'free'
     end
     NAV.lastCall = now
-    local ign = (kind == 'ore' or kind == 'wait') and {x = tx, y = ty} or nil
+    local ign = (kind == 'ore' or kind == 'wait') and {x = tx, y = ty, r = (kind == 'ore') and 2.2 or nil} or nil
+
+    -- РЈ С†РµР»Рё-СЂСѓРґС‹: РѕРЅР° СЃР°РјР° СѓРїРёСЂР°РµС‚СЃСЏ РІ РёРіСЂРѕРєР° СЃРІРѕРµР№ РєРѕР»Р»РёР·РёРµР№, Р° РІРѕ РІСЂРµРјСЏ РґРѕР±С‹С‡Рё Р±РѕС‚ СЃС‚РѕРёС‚ РЅР° РјРµСЃС‚Рµ.
+    -- Р­С‚Рѕ РЅРµ РїСЂРµРїСЏС‚СЃС‚РІРёРµ, РїРѕСЌС‚РѕРјСѓ "Р·Р°СЃС‚СЂСЏР»" РЅРµ СЃС‡РёС‚Р°РµРј (РЅРѕ РЅРµ РґРѕР»СЊС€Рµ 10 СЃРµРє - РІРґСЂСѓРі СЂСѓРґР° РЅРµРґРѕСЃС‚СѓРїРЅР°).
+    if kind == 'ore' and toolsDist2d(px, py, tx, ty) <= 1.8 then
+        local k = NAV.nearKey
+        if not NAV.nearT or not k or toolsDist2d(tx, ty, k.x, k.y) > 0.5 or now - (NAV.nearLast or 0) > 2 then
+            NAV.nearT = now
+            NAV.nearKey = {x = tx, y = ty}
+        end
+        NAV.nearLast = now
+        if now - NAV.nearT < 10 then
+            NAV.state = 'free'
+            NAV.refX, NAV.refY, NAV.refT = px, py, now
+            NAV.fails = 0
+            return desired, false
+        end
+    end
 
     if not NAV.refT then
         NAV.refX, NAV.refY, NAV.refT = px, py, now
@@ -2995,7 +3235,7 @@ function navSteer(tx, ty, kind, obj)
                 NAV.tries = 1
                 NAV.jumpAt = now
                 NAV.stats.jumps = NAV.stats.jumps + 1
-                NAV.info = "Застрял (" .. (k == 'wall' and "стена" or (k == 'low' and "низкое препятствие" or "непонятно что")) .. "): прыгаю"
+                NAV.info = "Р—Р°СЃС‚СЂСЏР» (" .. (k == 'wall' and "СЃС‚РµРЅР°" or (k == 'low' and "РЅРёР·РєРѕРµ РїСЂРµРїСЏС‚СЃС‚РІРёРµ" or "РЅРµРїРѕРЅСЏС‚РЅРѕ С‡С‚Рѕ")) .. "): РїСЂС‹РіР°СЋ"
                 return desired, true
             end
             navStartDetour(px, py, pz, desired, ign)
@@ -3009,7 +3249,7 @@ function navSteer(tx, ty, kind, obj)
             NAV.state = 'free'
             NAV.refX, NAV.refY, NAV.refT = px, py, now
             NAV.stats.freed = NAV.stats.freed + 1
-            NAV.info = "Прыжок помог"
+            NAV.info = "РџСЂС‹Р¶РѕРє РїРѕРјРѕРі"
             return desired, false
         end
         local jumpNow = (now - NAV.jumpAt) < 0.25
@@ -3027,14 +3267,14 @@ function navSteer(tx, ty, kind, obj)
         return desired, jumpNow
     end
 
-    -- обход
+    -- РѕР±С…РѕРґ
     local traveled = toolsDist2d(px, py, NAV.dsx, NAV.dsy)
     if traveled >= NAV.dlen then
         NAV.state = 'free'
         NAV.refX, NAV.refY, NAV.refT = px, py, now
         NAV.lastDetourEnd = now
         NAV.stats.freed = NAV.stats.freed + 1
-        NAV.info = "Обход пройден, иду к цели"
+        NAV.info = "РћР±С…РѕРґ РїСЂРѕР№РґРµРЅ, РёРґСѓ Рє С†РµР»Рё"
         return desired, false
     end
     if moved >= 0.6 then
@@ -3151,7 +3391,10 @@ function followRecordedRoute()
         lastMiningAttempt = 0
     end
     
-    -- Бот ждёт: если руды рядом нет, но скоро вырастет - идёт к месту и ждёт
+    -- Extra (РџСЂРѕ): Р±РµРі Рє СЂСѓРґРµ РїРѕ РјРµС‚РєР°Рј Рё Р·Р°РїРёСЃР°РЅРЅРѕРјСѓ РјР°СЂС€СЂСѓС‚Сѓ
+    if mhSmartFollow(route, px, py, pz) then return end
+    
+    -- Р‘РѕС‚ Р¶РґС‘С‚: РµСЃР»Рё СЂСѓРґС‹ СЂСЏРґРѕРј РЅРµС‚, РЅРѕ СЃРєРѕСЂРѕ РІС‹СЂР°СЃС‚РµС‚ - РёРґС‘С‚ Рє РјРµСЃС‚Сѓ Рё Р¶РґС‘С‚
     local waitSpot = rsFindWaitSpot(point.x, point.y, point.z, getRouteOreRadius(activeRouteIndex))
     if waitSpot and (waitSpot.navBlockedUntil or 0) > os.clock() then waitSpot = nil end
     if waitSpot then
@@ -3287,8 +3530,8 @@ local function autoJumpThread()
 end
 
 function sampev.onServerMessage(color, text)
-    if text:find('Администратор') then
-        sampAddChatMessage('{ff3333}[rabotyaga]: {ffffff}Внимание, администратор в игре!', -1)
+    if text:find('РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ') then
+        sampAddChatMessage('{ff3333}[rabotyaga]: {ffffff}Р’РЅРёРјР°РЅРёРµ, Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ РІ РёРіСЂРµ!', -1)
         tgNotifyAdmin(text)
     end
 end
@@ -3302,10 +3545,345 @@ function onScriptTerminate(s, quitGame)
     end
 end
 
+-- ===================== EXTRA (С„СѓРЅРєС†РёРё РёР· MineHelper) =====================
+MH = {
+    esp       = imgui.new.bool(false),  -- СЂРµРЅРґРµСЂ РЅР° РјРµСЃС‚РѕСЂРѕР¶РґРµРЅРёСЏ
+    spots     = imgui.new.bool(false),  -- РјРµСЃС‚Р° РїРѕСЏРІР»РµРЅРёСЏ СЂСѓРґС‹
+    run       = imgui.new.bool(false),  -- Р±РµСЃРєРѕРЅРµС‡РЅС‹Р№ Р±РµРі
+    cj        = imgui.new.bool(false),  -- СЃРєРёРЅ CJ
+    qanim     = imgui.new.bool(false),  -- СЃР±РёРІ РЅР° Q
+    font      = nil,
+    savedSkin = nil
+}
+
+function mhSetSkin(skinId)
+    local ok, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
+    if not ok then return end
+    local bs = raknetNewBitStream()
+    raknetBitStreamWriteInt32(bs, id)
+    raknetBitStreamWriteInt32(bs, skinId)
+    raknetEmulRpcReceiveBitStream(153, bs)
+    raknetDeleteBitStream(bs)
+end
+
+function mhApplyRun()
+    pcall(function() require('memory').setint8(0xB7CEE4, MH.run[0] and 1 or 0) end)
+end
+
+function mhApplyCJ()
+    if MH.cj[0] then
+        MH.savedSkin = getCharModel(PLAYER_PED)
+        mhSetSkin(74)
+    else
+        if MH.savedSkin then mhSetSkin(MH.savedSkin) end
+        MH.savedSkin = nil
+    end
+end
+
+function mhTick()
+    if not MH.font then MH.font = renderCreateFont("Century Gothic", 9, 5) end
+
+    -- Р‘РµР· РїРѕРґРїРёСЃРєРё РџСЂРѕ РІСЃС‘ РІС‹РєР»СЋС‡РµРЅРѕ (Рё РµСЃР»Рё РїРѕРґРїРёСЃРєР° РёСЃС‚РµРєР»Р° РїСЂРё РІРєР»СЋС‡С‘РЅРЅС‹С… С„СѓРЅРєС†РёСЏС…)
+    if not licPro() then
+        if MH.run[0] then MH.run[0] = false; mhApplyRun() end
+        if MH.cj[0] then MH.cj[0] = false; mhApplyCJ() end
+        MH.esp[0] = false
+        MH.spots[0] = false
+        MH.qanim[0] = false
+        MH.smart[0] = false
+        MH.tgt = nil
+        return
+    end
+
+    if MH.esp[0] then
+        local xp, yp, zp = getCharCoordinates(PLAYER_PED)
+        local px, py = convert3DCoordsToScreen(xp, yp, zp)
+        for id = 0, 2048 do
+            if sampIs3dTextDefined(id) then
+                local text, color, x, y, z = sampGet3dTextInfoById(id)
+                if text and text:find("РњРµСЃС‚РѕСЂРѕР¶РґРµРЅРёРµ СЂРµСЃСѓСЂСЃРѕРІ", 1, true) and isPointOnScreen(x, y, z, 3.0) then
+                    local sx, sy = convert3DCoordsToScreen(x, y, z)
+                    local dist = string.format("%.0f", getDistanceBetweenCoords3d(x, y, z, xp, yp, zp))
+                    renderDrawLine(sx, sy, px, py, 1.1, 0xFFFF0000)
+                    renderFontDrawText(MH.font, "{ffffff}Р СѓРґР°\n{ff0000}Р”РёСЃС‚Р°РЅС†РёСЏ: " .. dist, sx, sy, -1)
+                end
+            end
+        end
+    end
+
+    if MH.spots[0] then
+        for _, obj in ipairs(getAllObjects()) do
+            if isObjectOnScreen(obj) and getObjectModel(obj) == 19475 then
+                local res, ox, oy, oz = getObjectCoordinates(obj)
+                if res then
+                    local sx, sy = convert3DCoordsToScreen(ox, oy, oz)
+                    renderFontDrawText(MH.font, "РњРµСЃС‚Рѕ РїРѕСЏРІР»РµРЅРёСЏ СЂРµСЃСѓСЂСЃР°", sx, sy, -1)
+                end
+            end
+        end
+    end
+
+    if MH.qanim[0] and isKeyJustPressed(0x51) and not sampIsChatInputActive() and not sampIsDialogActive() then
+        taskPlayAnim(PLAYER_PED, "WF_FWD", "WAYFARER", 1, false, false, false, false, -1)
+    end
+end
+
+-- ===================== EXTRA: Р±РµРі Рє СЂСѓРґРµ РїРѕ РјРµС‚РєР°Рј Рё РјР°СЂС€СЂСѓС‚Сѓ (РџСЂРѕ) =====================
+-- РњРµС‚РєР° "РњРµСЃС‚РѕСЂРѕР¶РґРµРЅРёРµ СЂРµСЃСѓСЂСЃРѕРІ" С‚РѕР»СЊРєРѕ СѓРєР°Р·С‹РІР°РµС‚ СЂР°Р№РѕРЅ. Р¦РµР»СЊСЋ РІСЃРµРіРґР° СЃС‚Р°РЅРѕРІРёС‚СЃСЏ РЅР°СЃС‚РѕСЏС‰РёР№ РѕР±СЉРµРєС‚ СЂСѓРґС‹ СЂСЏРґРѕРј СЃ РјРµС‚РєРѕР№.
+MH.smart      = imgui.new.bool(false)
+MH.unverified = imgui.new.bool(false)  -- С…РѕРґРёС‚СЊ Рё Рє РјРµС‚РєР°Рј, Сѓ РєРѕС‚РѕСЂС‹С… СЃРµР№С‡Р°СЃ РЅРµ РІРёРґРЅРѕ СЂСѓРґС‹
+MH.sMax       = imgui.new.int(250)     -- РјР°РєСЃ. СЂР°СЃСЃС‚РѕСЏРЅРёРµ РґРѕ С†РµР»Рё, Рј
+MH.sLeave     = imgui.new.int(15)      -- СЃ РєР°РєРѕРіРѕ СЂР°СЃСЃС‚РѕСЏРЅРёСЏ РґРѕ СЂСѓРґС‹ СЃС…РѕРґРёРј СЃ РјР°СЂС€СЂСѓС‚Р°, Рј
+MH.sMatch     = imgui.new.int(10)      -- СЂР°РґРёСѓСЃ РїРѕРёСЃРєР° РѕР±СЉРµРєС‚Р° СЂСѓРґС‹ РІРѕРєСЂСѓРі РјРµС‚РєРё, Рј
+MH.sPause     = imgui.new.int(30)      -- РїР°СѓР·Р° РґР»СЏ РїСѓСЃС‚РѕРіРѕ РјРµСЃС‚Р°, СЃРµРє
+MH.deposits   = {}
+MH.depAt      = -10
+MH.visited    = {}                     -- key РјРµС‚РєРё -> РґРѕ РєР°РєРѕРіРѕ РІСЂРµРјРµРЅРё РїСЂРѕРїСѓСЃРєР°РµРј
+MH.tgt        = nil                    -- {lx, ly, key, x, y, z, oreId}: РјРµС‚РєР° Рё РєРѕРЅРєСЂРµС‚РЅР°СЏ СЂСѓРґР°
+MH.tgtIdx     = 1                      -- С‚РѕС‡РєР° РјР°СЂС€СЂСѓС‚Р°, Р±Р»РёР¶Р°Р№С€Р°СЏ Рє СЂСѓРґРµ
+MH.dir        = 1                      -- РЅР°РїСЂР°РІР»РµРЅРёРµ РїРѕ РјР°СЂС€СЂСѓС‚Сѓ: 1 РІРїРµСЂС‘Рґ, -1 РЅР°Р·Р°Рґ
+MH.tgtSince   = 0
+MH.pickAt     = -10
+MH.lastOre    = nil
+MH.tries      = 0
+
+function mhKey(x, y)
+    return math.floor(x + 0.5) .. ":" .. math.floor(y + 0.5)
+end
+
+function mhScanDeposits()
+    local now = os.clock()
+    if now - MH.depAt < 0.5 then return MH.deposits end
+    MH.depAt = now
+    local list = {}
+    for id = 0, 2048 do
+        if sampIs3dTextDefined(id) then
+            local text, color, x, y, z, dist, walls, pl, veh = sampGet3dTextInfoById(id)
+            local free = (not pl or pl == 65535) and (not veh or veh == 65535)
+            if free and text and text:find("РњРµСЃС‚РѕСЂРѕР¶РґРµРЅРёРµ СЂРµСЃСѓСЂСЃРѕРІ", 1, true) then
+                list[#list + 1] = {x = x, y = y, z = z, key = mhKey(x, y)}
+            end
+        end
+    end
+    MH.deposits = list
+    return list
+end
+
+-- РќР°СЃС‚РѕСЏС‰РёРµ РѕР±СЉРµРєС‚С‹ СЂСѓРґС‹ РІРѕРєСЂСѓРі С‚РѕС‡РєРё
+function mhOresAt(x, y, radius)
+    local list = {}
+    for k, v in pairs(resources) do
+        local h = sampGetObjectHandleBySampId(k)
+        if doesObjectExist(h) then
+            local _, ox, oy, oz = getObjectCoordinates(h)
+            if toolsDist2d(ox, oy, x, y) <= radius and not navIsBad(ox, oy) then
+                list[#list + 1] = {id = k, x = ox, y = oy, z = oz, pr = orePriority[v] or 0}
+            end
+        end
+    end
+    return list
+end
+
+function mhBestOre(list, px, py, pz)
+    local best, bd
+    for _, o in ipairs(list) do
+        local d = getDistanceBetweenCoords3d(px, py, pz, o.x, o.y, o.z)
+        if not best or o.pr > best.pr or (o.pr == best.pr and d < bd) then best, bd = o, d end
+    end
+    return best
+end
+
+function mhNearestIdx(route, x, y, z)
+    local best, bi = 1e9, 1
+    for i = 1, #route do
+        local q = route[i]
+        local d = getDistanceBetweenCoords3d(x, y, z, q.x, q.y, q.z)
+        if d < best then best, bi = d, i end
+    end
+    return bi, best
+end
+
+function mhPathLen(route, from, to, dir)
+    local n = #route
+    local len, i, guard = 0, from, 0
+    while i ~= to and guard < n do
+        local j = ((i - 1 + dir) % n) + 1
+        local a, b = route[i], route[j]
+        len = len + getDistanceBetweenCoords3d(a.x, a.y, a.z, b.x, b.y, b.z)
+        i, guard = j, guard + 1
+    end
+    return len
+end
+
+function mhPickTarget(route, px, py, pz)
+    local now = os.clock()
+    if now - MH.pickAt < 0.5 then return false end
+    MH.pickAt = now
+    local pi, pd = mhNearestIdx(route, px, py, pz)
+    local best, bestCost
+    for _, d in ipairs(mhScanDeposits()) do
+        local skip = MH.visited[d.key]
+        if not (skip and skip > now) then
+            local ore = mhBestOre(mhOresAt(d.x, d.y, MH.sMatch[0]), px, py, pz)
+            if ore or MH.unverified[0] then
+                local tx, ty, tz = d.x, d.y, d.z
+                if ore then tx, ty, tz = ore.x, ore.y, ore.z end
+                local straight = getDistanceBetweenCoords3d(px, py, pz, tx, ty, tz)
+                if straight <= MH.sMax[0] then
+                    local ti, td = mhNearestIdx(route, tx, ty, tz)
+                    local f = mhPathLen(route, pi, ti, 1)
+                    local bk = mhPathLen(route, pi, ti, -1)
+                    local cost
+                    if toolsDist2d(px, py, tx, ty) <= MH.sLeave[0] then
+                        cost = straight
+                    else
+                        cost = pd + math.min(f, bk) + td
+                    end
+                    if ore then cost = cost - 1000 end   -- СЃ РЅР°СЃС‚РѕСЏС‰РµР№ СЂСѓРґРѕР№ РІСЃРµРіРґР° Р»СѓС‡С€Рµ, С‡РµРј РїСЂРѕСЃС‚Рѕ РјРµС‚РєР°
+                    if not bestCost or cost < bestCost then
+                        best = {lx = d.x, ly = d.y, key = d.key, x = tx, y = ty, z = tz,
+                                oreId = ore and ore.id or nil, ti = ti, dir = (f <= bk) and 1 or -1}
+                        bestCost = cost
+                    end
+                end
+            end
+        end
+    end
+    if not best then return false end
+    MH.tgt = best
+    MH.tgtIdx, MH.dir, MH.tgtSince = best.ti, best.dir, now
+    MH.lastOre, MH.tries = nil, 0
+    currentRoutePoint = pi
+    return true
+end
+
+-- Р’РѕР·РІСЂР°С‰Р°РµС‚ true, РµСЃР»Рё С€Р°Рі Р±РѕС‚Р° РІС‹РїРѕР»РЅРµРЅ Р·РґРµСЃСЊ (РёРЅР°С‡Рµ СЂР°Р±РѕС‚Р°РµС‚ РѕР±С‹С‡РЅР°СЏ Р»РѕРіРёРєР° РјР°СЂС€СЂСѓС‚Р°)
+function mhSmartFollow(route, px, py, pz)
+    if not MH.smart[0] or not licPro() or isCharInAnyCar(PLAYER_PED) then
+        MH.tgt = nil
+        return false
+    end
+    local now = os.clock()
+
+    if MH.tgt then
+        local t = MH.tgt
+        local alive = false
+        for _, d in ipairs(mhScanDeposits()) do
+            if d.key == t.key then alive = true break end
+        end
+        local timeout = now - MH.tgtSince > 60
+        if timeout then MH.visited[t.key] = now + 90 end
+        if not alive or timeout or (MH.visited[t.key] or 0) > now then
+            MH.tgt = nil
+        else
+            -- С†РµР»СЊ Р·Р°РєСЂРµРїР»РµРЅР° Р·Р° РєРѕРЅРєСЂРµС‚РЅРѕР№ СЂСѓРґРѕР№, РїРѕРєР° С‚Р° СЃСѓС‰РµСЃС‚РІСѓРµС‚ (С‡С‚РѕР±С‹ Р±РѕС‚ РЅРµ РјРµС‚Р°Р»СЃСЏ РјРµР¶РґСѓ СЂСѓРґР°РјРё)
+            local stillOre = t.oreId and resources[t.oreId] ~= nil and doesObjectExist(sampGetObjectHandleBySampId(t.oreId))
+            if not stillOre then
+                local ore = mhBestOre(mhOresAt(t.lx, t.ly, MH.sMatch[0]), px, py, pz)
+                if ore then
+                    t.oreId, t.x, t.y, t.z = ore.id, ore.x, ore.y, ore.z
+                    MH.tgtIdx = mhNearestIdx(route, t.x, t.y, t.z)
+                    MH.tgtSince = now
+                    MH.lastOre, MH.tries = nil, 0
+                elseif t.oreId or toolsDist2d(px, py, t.lx, t.ly) <= 20 then
+                    -- СЂСѓРґСѓ Р·Р°Р±СЂР°Р»Рё / Сѓ РјРµС‚РєРё РїСѓСЃС‚Рѕ: Р¶РґС‘Рј СЂРµСЃРїР°РІРЅР°
+                    MH.visited[t.key] = now + MH.sPause[0]
+                    MH.tgt = nil
+                end
+            end
+        end
+    end
+    if not MH.tgt and not mhPickTarget(route, px, py, pz) then return false end
+
+    local t = MH.tgt
+    local flat = toolsDist2d(px, py, t.x, t.y)
+    if t.oreId then DrawTracer(px, py, pz, t.x, t.y, t.z, 0xFF00AAFF) end
+
+    -- 1. Р”Р°Р»РµРєРѕ РѕС‚ СЂСѓРґС‹: Р±РµР¶РёРј РїРѕ Р·Р°РїРёСЃР°РЅРЅРѕРјСѓ РјР°СЂС€СЂСѓС‚Сѓ Рє С‚РѕС‡РєРµ СЂСЏРґРѕРј СЃ РЅРµР№
+    if flat > MH.sLeave[0] then
+        local n = #route
+        if currentRoutePoint < 1 or currentRoutePoint > n then currentRoutePoint = 1 end
+        local q = route[currentRoutePoint]
+        local useDirect = false
+        if getDistanceBetweenCoords3d(px, py, pz, q.x, q.y, q.z) <= routeCheckDistance then
+            if currentRoutePoint == MH.tgtIdx then
+                useDirect = true
+            else
+                currentRoutePoint = ((currentRoutePoint - 1 + MH.dir) % n) + 1
+                q = route[currentRoutePoint]
+            end
+        end
+        if not useDirect then
+            BOT.kind = 'route'
+            BOT.x, BOT.y, BOT.z = q.x, q.y, q.z
+            local ang, jmp = navSteer(q.x, q.y, 'route', q)
+            setTargetAngle(ang)
+            smoothCameraRotation()
+            setGameKeyState(1, -255)
+            if sprint then setGameKeyState(16, 1) end
+            navApplyJump(jmp)
+            if q.action == "JUMP" and MH.dir == 1 then setGameKeyState(0x20, 255) end
+            return true
+        end
+    end
+
+    -- 2. Р СЏРґРѕРј СЃ СЂСѓРґРѕР№: РёРґС‘Рј РїСЂСЏРјРѕ Рє РЅРµР№
+    local ore = {t.x, t.y, t.z}
+    if t.oreId and isPlayerNearPosition(ore[1], ore[2], ore[3], 5) then
+        MH.visited[t.key] = now + 15
+        MH.tgt = nil
+        return false
+    end
+
+    local oreFlat = flat
+    local oreDist = getDistanceBetweenCoords3d(px, py, pz, ore[1], ore[2], ore[3])
+    local atOre = oreFlat <= MINE.dist
+    if oreDist > 1.5 or atOre then
+        MINE.nearSince = nil
+    else
+        if not MINE.nearSince then MINE.nearSince = now end
+        if now - MINE.nearSince > MINE.fallback then atOre = true end
+    end
+    BOT.kind = atOre and 'mine' or 'ore'
+    BOT.x, BOT.y, BOT.z = ore[1], ore[2], ore[3]
+    if t.oreId then Draw3DCircle(ore[1], ore[2], ore[3] - 0.1, math.max(MINE.dist, 0.3), 0xFF00FF00) end
+
+    if atOre then
+        MINE.nearSince = nil
+        navIdle()
+        -- РѕРґРЅР° Рё С‚Р° Р¶Рµ СЂСѓРґР° РЅРµ СЂР°Р·СЂСѓС€Р°РµС‚СЃСЏ РїРѕСЃР»Рµ РЅРµСЃРєРѕР»СЊРєРёС… РєРѕРїР°РЅРёР№ - РїСЂРѕРїСѓСЃРєР°РµРј РјРµСЃС‚Рѕ
+        if MH.lastOre == t.oreId then
+            MH.tries = MH.tries + 1
+        else
+            MH.lastOre, MH.tries = t.oreId, 1
+        end
+        if MH.tries > 4 then
+            MH.visited[t.key] = now + MH.sPause[0]
+            MH.tgt, MH.lastOre, MH.tries = nil, nil, 0
+            return false
+        end
+        setGameKeyState(1, 0)
+        setGameKeyState(16, 0)
+        setGameKeyState(21, -256)
+        wait(200)
+        setGameKeyState(21, 0)
+        wait(500)
+        return true
+    end
+
+    local ang, jmp = navSteer(ore[1], ore[2], 'ore', ore)
+    setTargetAngle(ang)
+    smoothCameraRotation()
+    setGameKeyState(1, -255)
+    if sprint then setGameKeyState(16, 1) end
+    navApplyJump(jmp)
+    return true
+end
+
 function main()
     while not isSampAvailable() do wait(0) end
     wait(200)
-    sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Скрипт запущен!', -1)
+    sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РЎРєСЂРёРїС‚ Р·Р°РїСѓС‰РµРЅ!', -1)
     loadCustomRoutesFromFile()
     rsLoadSettings()
     navLoadSettings()
@@ -3313,8 +3891,8 @@ function main()
     rsLoadSpots()
     tgLoadSettings()
     RS.font = renderCreateFont("Arial", 10, 5)
-    sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Маршрутов загружено: ' .. getRouteCount(), -1)
-    sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}F6 - запись маршрута, вкладка "Маршрут" в меню', -1)
+    sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РњР°СЂС€СЂСѓС‚РѕРІ Р·Р°РіСЂСѓР¶РµРЅРѕ: ' .. getRouteCount(), -1)
+    sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}F6 - Р·Р°РїРёСЃСЊ РјР°СЂС€СЂСѓС‚Р°, РІРєР»Р°РґРєР° "РњР°СЂС€СЂСѓС‚" РІ РјРµРЅСЋ', -1)
     loadConfigs()
     loadConfig(mainIni.main.currentConfig)
     
@@ -3322,18 +3900,24 @@ function main()
         WinState[0] = not WinState[0]
     end)
     
+    sampRegisterChatCommand('amineintro', function()
+        GLASS.introDone = false
+        GLASS.intro = nil
+        WinState[0] = true
+    end)
+    
     sampRegisterChatCommand('beerbot', function(args)
         if args == "on" then
             beerEnabled = true
-            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}Авто-пиво включено.', -1)
+            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}РђРІС‚Рѕ-РїРёРІРѕ РІРєР»СЋС‡РµРЅРѕ.', -1)
         elseif args == "off" then
             beerEnabled = false
-            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}Авто-пиво выключено.', -1)
+            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}РђРІС‚Рѕ-РїРёРІРѕ РІС‹РєР»СЋС‡РµРЅРѕ.', -1)
         elseif args == "toggle" or args == "" then
             beerEnabled = not beerEnabled
-            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}Авто-пиво ' .. (beerEnabled and 'включено' or 'выключено'), -1)
+            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}РђРІС‚Рѕ-РїРёРІРѕ ' .. (beerEnabled and 'РІРєР»СЋС‡РµРЅРѕ' or 'РІС‹РєР»СЋС‡РµРЅРѕ'), -1)
         else
-            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}Команды: /beerbot on/off/toggle (или F5)', -1)
+            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}РљРѕРјР°РЅРґС‹: /beerbot on/off/toggle (РёР»Рё F5)', -1)
         end
     end)
     
@@ -3356,7 +3940,7 @@ function main()
         
         if isKeyJustPressed(0x74) then -- F5
             beerEnabled = not beerEnabled
-            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}Авто-пиво ' .. (beerEnabled and 'включено' or 'выключено'), -1)
+            sampAddChatMessage('{cc66ff}[BeerBot]: {ffffff}РђРІС‚Рѕ-РїРёРІРѕ ' .. (beerEnabled and 'РІРєР»СЋС‡РµРЅРѕ' or 'РІС‹РєР»СЋС‡РµРЅРѕ'), -1)
         end
         
         if isRecordingRoute then
@@ -3370,11 +3954,12 @@ function main()
         tgTick()
         navTick()
         licTick()
+        mhTick()
         
         if collisionEnabled and not licPro() then
             collisionEnabled = false
             enableCollision()
-            licDeny('Коллизия')
+            licDeny('РљРѕР»Р»РёР·РёСЏ')
         end
         if collisionEnabled then
             enableCollision()
@@ -3387,7 +3972,7 @@ function main()
             
             if afkAfterHour and os.time() - farmStartTime >= 3600 and not isAfk then
                 isAfk = true
-                sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}АФК отдых на 10 минут', -1)
+                sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РђР¤Рљ РѕС‚РґС‹С… РЅР° 10 РјРёРЅСѓС‚', -1)
                 BOT.kind = 'afk'
                 local afkStart = os.time()
                 while os.time() - afkStart < afkDuration do
@@ -3395,7 +3980,7 @@ function main()
                 end
                 isAfk = false
                 farmStartTime = os.time()
-                sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}АФК закончен, продолжаю работу', -1)
+                sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РђР¤Рљ Р·Р°РєРѕРЅС‡РµРЅ, РїСЂРѕРґРѕР»Р¶Р°СЋ СЂР°Р±РѕС‚Сѓ', -1)
             end
             
             if not isAfk then
@@ -3413,51 +3998,54 @@ end
 local function theme()
     imgui.SwitchContext()
     local ImVec4 = imgui.ImVec4
-    imgui.GetStyle().WindowPadding = imgui.ImVec2(10, 10)
-    imgui.GetStyle().FramePadding = imgui.ImVec2(8, 6)
-    imgui.GetStyle().ItemSpacing = imgui.ImVec2(8, 8)
-    imgui.GetStyle().ItemInnerSpacing = imgui.ImVec2(6, 6)
-    imgui.GetStyle().IndentSpacing = 0
-    imgui.GetStyle().ScrollbarSize = 10
-    imgui.GetStyle().GrabMinSize = 10
-    imgui.GetStyle().WindowBorderSize = 0
-    imgui.GetStyle().ChildBorderSize = 0
-    imgui.GetStyle().PopupBorderSize = 0
-    imgui.GetStyle().FrameBorderSize = 0
-    imgui.GetStyle().WindowRounding = 8
-    imgui.GetStyle().ChildRounding = 8
-    imgui.GetStyle().FrameRounding = 6
-    imgui.GetStyle().ScrollbarRounding = 6
-    imgui.GetStyle().GrabRounding = 4
-    imgui.GetStyle().Colors[imgui.Col.Text] = ImVec4(1.00, 1.00, 1.00, 1.00)
-    imgui.GetStyle().Colors[imgui.Col.TextDisabled] = ImVec4(0.60, 0.60, 0.60, 1.00)
-    imgui.GetStyle().Colors[imgui.Col.WindowBg] = ImVec4(0.08, 0.08, 0.08, 0.94)
-    imgui.GetStyle().Colors[imgui.Col.ChildBg] = ImVec4(0.09, 0.09, 0.09, 0.85)
-    imgui.GetStyle().Colors[imgui.Col.PopupBg] = ImVec4(0.08, 0.08, 0.08, 0.96)
-    imgui.GetStyle().Colors[imgui.Col.Border] = ImVec4(0.15, 0.15, 0.15, 0.60)
-    imgui.GetStyle().Colors[imgui.Col.FrameBg] = ImVec4(0.10, 0.10, 0.10, 0.85)
-    imgui.GetStyle().Colors[imgui.Col.FrameBgHovered] = ImVec4(0.12, 0.12, 0.12, 0.90)
-    imgui.GetStyle().Colors[imgui.Col.FrameBgActive] = accent(0.35)
-    imgui.GetStyle().Colors[imgui.Col.TitleBg] = ImVec4(0.06, 0.06, 0.06, 1.00)
-    imgui.GetStyle().Colors[imgui.Col.TitleBgActive] = ImVec4(0.07, 0.07, 0.07, 1.00)
-    imgui.GetStyle().Colors[imgui.Col.TitleBgCollapsed] = ImVec4(0.06, 0.06, 0.06, 1.00)
-    imgui.GetStyle().Colors[imgui.Col.MenuBarBg] = ImVec4(0.07, 0.07, 0.07, 1.00)
-    imgui.GetStyle().Colors[imgui.Col.ScrollbarBg] = ImVec4(0.07, 0.07, 0.07, 0.60)
-    imgui.GetStyle().Colors[imgui.Col.ScrollbarGrab] = ImVec4(0.15, 0.15, 0.15, 0.85)
-    imgui.GetStyle().Colors[imgui.Col.ScrollbarGrabHovered] = ImVec4(0.20, 0.20, 0.20, 0.90)
-    imgui.GetStyle().Colors[imgui.Col.ScrollbarGrabActive] = ImVec4(0.25, 0.25, 0.25, 0.95)
-    imgui.GetStyle().Colors[imgui.Col.CheckMark] = accent(1.00)
-    imgui.GetStyle().Colors[imgui.Col.SliderGrab] = accent(0.75)
-    imgui.GetStyle().Colors[imgui.Col.SliderGrabActive] = accent(1.00)
-    imgui.GetStyle().Colors[imgui.Col.Button] = ImVec4(0.10, 0.10, 0.10, 0.85)
-    imgui.GetStyle().Colors[imgui.Col.ButtonHovered] = ImVec4(0.12, 0.12, 0.12, 0.90)
-    imgui.GetStyle().Colors[imgui.Col.ButtonActive] = accent(0.35)
-    imgui.GetStyle().Colors[imgui.Col.Header] = accent(0.25)
-    imgui.GetStyle().Colors[imgui.Col.HeaderHovered] = accent(0.35)
-    imgui.GetStyle().Colors[imgui.Col.HeaderActive] = accent(0.45)
-    imgui.GetStyle().Colors[imgui.Col.Separator] = ImVec4(0.15, 0.15, 0.15, 0.60)
-    imgui.GetStyle().Colors[imgui.Col.SeparatorHovered] = ImVec4(0.20, 0.20, 0.20, 0.75)
-    imgui.GetStyle().Colors[imgui.Col.SeparatorActive] = ImVec4(0.25, 0.25, 0.25, 0.90)
+    local st = imgui.GetStyle()
+    st.WindowPadding = imgui.ImVec2(10, 10)
+    st.FramePadding = imgui.ImVec2(10, 7)
+    st.ItemSpacing = imgui.ImVec2(8, 8)
+    st.ItemInnerSpacing = imgui.ImVec2(6, 6)
+    st.IndentSpacing = 0
+    st.ScrollbarSize = 8
+    st.GrabMinSize = 10
+    st.WindowBorderSize = 0
+    st.ChildBorderSize = 1
+    st.PopupBorderSize = 1
+    st.FrameBorderSize = 1
+    st.WindowRounding = 24
+    st.ChildRounding = 16
+    st.PopupRounding = 14
+    st.FrameRounding = 12
+    st.ScrollbarRounding = 10
+    st.GrabRounding = 10
+    -- "Р¶РёРґРєРѕРµ СЃС‚РµРєР»Рѕ": РїРѕР»СѓРїСЂРѕР·СЂР°С‡РЅС‹Рµ Р±РµР»С‹Рµ СЃР»РѕРё + С‚РѕРЅРєРёРµ СЃРІРµС‚Р»С‹Рµ РєСЂРѕРјРєРё
+    st.Colors[imgui.Col.Text] = ImVec4(1.00, 1.00, 1.00, 1.00)
+    st.Colors[imgui.Col.TextDisabled] = ImVec4(0.62, 0.65, 0.74, 1.00)
+    st.Colors[imgui.Col.WindowBg] = ImVec4(0.06, 0.07, 0.12, 0.80)
+    st.Colors[imgui.Col.ChildBg] = ImVec4(1.00, 1.00, 1.00, 0.045)
+    st.Colors[imgui.Col.PopupBg] = ImVec4(0.08, 0.09, 0.15, 0.94)
+    st.Colors[imgui.Col.Border] = ImVec4(1.00, 1.00, 1.00, 0.13)
+    st.Colors[imgui.Col.FrameBg] = ImVec4(1.00, 1.00, 1.00, 0.07)
+    st.Colors[imgui.Col.FrameBgHovered] = ImVec4(1.00, 1.00, 1.00, 0.12)
+    st.Colors[imgui.Col.FrameBgActive] = accent(0.30)
+    st.Colors[imgui.Col.TitleBg] = ImVec4(0.06, 0.07, 0.12, 0.90)
+    st.Colors[imgui.Col.TitleBgActive] = ImVec4(0.08, 0.09, 0.15, 0.95)
+    st.Colors[imgui.Col.TitleBgCollapsed] = ImVec4(0.06, 0.07, 0.12, 0.80)
+    st.Colors[imgui.Col.MenuBarBg] = ImVec4(1.00, 1.00, 1.00, 0.05)
+    st.Colors[imgui.Col.ScrollbarBg] = ImVec4(0.00, 0.00, 0.00, 0.00)
+    st.Colors[imgui.Col.ScrollbarGrab] = ImVec4(1.00, 1.00, 1.00, 0.18)
+    st.Colors[imgui.Col.ScrollbarGrabHovered] = ImVec4(1.00, 1.00, 1.00, 0.30)
+    st.Colors[imgui.Col.ScrollbarGrabActive] = ImVec4(1.00, 1.00, 1.00, 0.42)
+    st.Colors[imgui.Col.CheckMark] = accent(1.00)
+    st.Colors[imgui.Col.SliderGrab] = accent(0.80)
+    st.Colors[imgui.Col.SliderGrabActive] = accent(1.00)
+    st.Colors[imgui.Col.Button] = ImVec4(1.00, 1.00, 1.00, 0.09)
+    st.Colors[imgui.Col.ButtonHovered] = ImVec4(1.00, 1.00, 1.00, 0.17)
+    st.Colors[imgui.Col.ButtonActive] = accent(0.40)
+    st.Colors[imgui.Col.Header] = accent(0.25)
+    st.Colors[imgui.Col.HeaderHovered] = accent(0.35)
+    st.Colors[imgui.Col.HeaderActive] = accent(0.45)
+    st.Colors[imgui.Col.Separator] = ImVec4(1.00, 1.00, 1.00, 0.12)
+    st.Colors[imgui.Col.SeparatorHovered] = ImVec4(1.00, 1.00, 1.00, 0.25)
+    st.Colors[imgui.Col.SeparatorActive] = ImVec4(1.00, 1.00, 1.00, 0.40)
 end
 
 imgui.OnInitialize(function()
@@ -3494,17 +4082,17 @@ local function renderMainTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
     
-    renderSectionHeader(u8"Основное")
+    renderSectionHeader(u8"РћСЃРЅРѕРІРЅРѕРµ")
     
-    if imgui.Checkbox(u8"Включить бота", imgui.new.bool(mode)) then 
+    if imgui.Checkbox(u8"Р’РєР»СЋС‡РёС‚СЊ Р±РѕС‚Р°", imgui.new.bool(mode)) then 
         mode = not mode 
     end
     imgui.SameLine()
-    if imgui.Checkbox(u8"Бег", imgui.new.bool(sprint)) then 
+    if imgui.Checkbox(u8"Р‘РµРі", imgui.new.bool(sprint)) then 
         sprint = not sprint 
     end
     imgui.SameLine()
-    if imgui.Checkbox(u8"Прыжок", imgui.new.bool(jumpEnabled)) then 
+    if imgui.Checkbox(u8"РџСЂС‹Р¶РѕРє", imgui.new.bool(jumpEnabled)) then 
         jumpEnabled = not jumpEnabled 
         if jumpEnabled then
             nextJumpTime = os.clock() + math.random(4, 9)
@@ -3512,20 +4100,20 @@ local function renderMainTab()
     end
     
     imgui.Dummy(imgui.ImVec2(0, 8))
-    if imgui.Checkbox(u8"АФК после часа", imgui.new.bool(afkAfterHour)) then 
+    if imgui.Checkbox(u8"РђР¤Рљ РїРѕСЃР»Рµ С‡Р°СЃР°", imgui.new.bool(afkAfterHour)) then 
         afkAfterHour = not afkAfterHour 
     end
     
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Цель добычи")
+    imgui.Text(u8"Р¦РµР»СЊ РґРѕР±С‹С‡Рё")
     imgui.SliderInt("##goal", SliderInt, 1, 10000)
     
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Выбранный маршрут: " .. getRouteName(activeRouteIndex))
-    imgui.Text(u8"Текущая точка: " .. currentRoutePoint .. u8" из " .. #getActiveRoute())
-    if imgui.Button(u8"Сбросить маршрут", imgui.ImVec2(150, 25)) then
+    imgui.Text(u8"Р’С‹Р±СЂР°РЅРЅС‹Р№ РјР°СЂС€СЂСѓС‚: " .. getRouteName(activeRouteIndex))
+    imgui.Text(u8"РўРµРєСѓС‰Р°СЏ С‚РѕС‡РєР°: " .. currentRoutePoint .. u8" РёР· " .. #getActiveRoute())
+    if imgui.Button(u8"РЎР±СЂРѕСЃРёС‚СЊ РјР°СЂС€СЂСѓС‚", imgui.ImVec2(150, 25)) then
         currentRoutePoint = 1
-        sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Маршрут сброшен!', -1)
+        sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РњР°СЂС€СЂСѓС‚ СЃР±СЂРѕС€РµРЅ!', -1)
     end
 
     renderMineDistSection()
@@ -3537,37 +4125,37 @@ local function renderPriorityTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
     
-    renderSectionHeader(u8"Приоритет руд")
+    renderSectionHeader(u8"РџСЂРёРѕСЂРёС‚РµС‚ СЂСѓРґ")
     
-    imgui.Text(u8"Камень:")
+    imgui.Text(u8"РљР°РјРµРЅСЊ:")
     if imgui.SliderInt("##stone", PrioritySliders[1], 1, 5) then
         orePriority[1] = PrioritySliders[1][0]
         mainIni.priority.stone = PrioritySliders[1][0]
         inicfg.save(mainIni, 'autominev2.ini')
     end
     
-    imgui.Text(u8"Металл:")
+    imgui.Text(u8"РњРµС‚Р°Р»Р»:")
     if imgui.SliderInt("##metal", PrioritySliders[2], 1, 5) then
         orePriority[2] = PrioritySliders[2][0]
         mainIni.priority.metal = PrioritySliders[2][0]
         inicfg.save(mainIni, 'autominev2.ini')
     end
     
-    imgui.Text(u8"Серебро:")
+    imgui.Text(u8"РЎРµСЂРµР±СЂРѕ:")
     if imgui.SliderInt("##silver", PrioritySliders[3], 1, 5) then
         orePriority[3] = PrioritySliders[3][0]
         mainIni.priority.silver = PrioritySliders[3][0]
         inicfg.save(mainIni, 'autominev2.ini')
     end
     
-    imgui.Text(u8"Бронза:")
+    imgui.Text(u8"Р‘СЂРѕРЅР·Р°:")
     if imgui.SliderInt("##bronze", PrioritySliders[4], 1, 5) then
         orePriority[4] = PrioritySliders[4][0]
         mainIni.priority.bronze = PrioritySliders[4][0]
         inicfg.save(mainIni, 'autominev2.ini')
     end
     
-    imgui.Text(u8"Золото:")
+    imgui.Text(u8"Р—РѕР»РѕС‚Рѕ:")
     if imgui.SliderInt("##gold", PrioritySliders[5], 1, 5) then
         orePriority[5] = PrioritySliders[5][0]
         mainIni.priority.gold = PrioritySliders[5][0]
@@ -3581,36 +4169,36 @@ local function renderConfigTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
     
-    renderSectionHeader(u8"Конфигурации")
+    renderSectionHeader(u8"РљРѕРЅС„РёРіСѓСЂР°С†РёРё")
     
-    imgui.Text(u8"Текущий конфиг: " .. currentConfig)
+    imgui.Text(u8"РўРµРєСѓС‰РёР№ РєРѕРЅС„РёРі: " .. currentConfig)
     imgui.Dummy(imgui.ImVec2(0, 8))
     
-    imgui.InputText(u8"Имя конфига", configName, 256)
+    imgui.InputText(u8"РРјСЏ РєРѕРЅС„РёРіР°", configName, 256)
     
-    if imgui.Button(u8"Сохранить конфиг", imgui.ImVec2(150, 25)) then
+    if imgui.Button(u8"РЎРѕС…СЂР°РЅРёС‚СЊ РєРѕРЅС„РёРі", imgui.ImVec2(150, 25)) then
         local name = ffi.string(configName)
         if name ~= "" then
             saveConfig(name)
             loadConfigs()
-            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Конфиг сохранён: ' .. name, -1)
+            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РљРѕРЅС„РёРі СЃРѕС…СЂР°РЅС‘РЅ: ' .. name, -1)
         end
     end
     
     imgui.SameLine()
-    if imgui.Button(u8"Загрузить конфиг", imgui.ImVec2(150, 25)) then
+    if imgui.Button(u8"Р—Р°РіСЂСѓР·РёС‚СЊ РєРѕРЅС„РёРі", imgui.ImVec2(150, 25)) then
         local name = ffi.string(configName)
         if name ~= "" then
             loadConfig(name)
             currentConfig = name
             mainIni.main.currentConfig = name
             inicfg.save(mainIni, 'autominev2.ini')
-            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Конфиг загружен: ' .. name, -1)
+            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РљРѕРЅС„РёРі Р·Р°РіСЂСѓР¶РµРЅ: ' .. name, -1)
         end
     end
     
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Доступные конфиги:")
+    imgui.Text(u8"Р”РѕСЃС‚СѓРїРЅС‹Рµ РєРѕРЅС„РёРіРё:")
     
     for i, config in ipairs(configs) do
         if imgui.Button(config, imgui.ImVec2(120, 25)) then
@@ -3618,7 +4206,7 @@ local function renderConfigTab()
             currentConfig = config
             mainIni.main.currentConfig = config
             inicfg.save(mainIni, 'autominev2.ini')
-            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Конфиг загружен: ' .. config, -1)
+            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РљРѕРЅС„РёРі Р·Р°РіСЂСѓР¶РµРЅ: ' .. config, -1)
         end
         if i % 2 == 1 then imgui.SameLine() end
     end
@@ -3630,23 +4218,23 @@ local function renderCollisionTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
     
-    renderSectionHeader(u8"Коллизия")
+    renderSectionHeader(u8"РљРѕР»Р»РёР·РёСЏ")
     
-    if imgui.Checkbox(u8"Отключить коллизию", imgui.new.bool(collisionEnabled)) then 
+    if imgui.Checkbox(u8"РћС‚РєР»СЋС‡РёС‚СЊ РєРѕР»Р»РёР·РёСЋ", imgui.new.bool(collisionEnabled)) then 
         collisionEnabled = not collisionEnabled
         enableCollision()
         if collisionEnabled then
-            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Коллизия отключена', -1)
+            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РљРѕР»Р»РёР·РёСЏ РѕС‚РєР»СЋС‡РµРЅР°', -1)
         else
-            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Коллизия включена', -1)
+            sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РљРѕР»Р»РёР·РёСЏ РІРєР»СЋС‡РµРЅР°', -1)
         end
     end
     
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Отключает коллизию персонажей")
-    imgui.Text(u8"машин, объектов и игроков")
+    imgui.Text(u8"РћС‚РєР»СЋС‡Р°РµС‚ РєРѕР»Р»РёР·РёСЋ РїРµСЂСЃРѕРЅР°Р¶РµР№")
+    imgui.Text(u8"РјР°С€РёРЅ, РѕР±СЉРµРєС‚РѕРІ Рё РёРіСЂРѕРєРѕРІ")
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Статус: " .. (collisionEnabled and u8"отключена" or u8"включена"))
+    imgui.Text(u8"РЎС‚Р°С‚СѓСЃ: " .. (collisionEnabled and u8"РѕС‚РєР»СЋС‡РµРЅР°" or u8"РІРєР»СЋС‡РµРЅР°"))
     
     imgui.EndGroup()
 end
@@ -3655,9 +4243,9 @@ local function renderMiscTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
     
-    renderSectionHeader(u8"Цвет интерфейса")
+    renderSectionHeader(u8"Р¦РІРµС‚ РёРЅС‚РµСЂС„РµР№СЃР°")
     
-    imgui.Text(u8"Выберите цветовую тему интерфейса:")
+    imgui.Text(u8"Р’С‹Р±РµСЂРёС‚Рµ С†РІРµС‚РѕРІСѓСЋ С‚РµРјСѓ РёРЅС‚РµСЂС„РµР№СЃР°:")
     imgui.Dummy(imgui.ImVec2(0, 10))
     
     for i, t in ipairs(colorThemes) do
@@ -3672,7 +4260,7 @@ local function renderMiscTab()
             mainIni.main.colorTheme = t.id
             inicfg.save(mainIni, 'autominev2.ini')
             theme()
-            sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Тема изменена: ' .. t.chatName, -1)
+            sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}РўРµРјР° РёР·РјРµРЅРµРЅР°: ' .. t.chatName, -1)
         end
         
         imgui.PopStyleColor(3)
@@ -3688,24 +4276,24 @@ local function renderRouteTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
     
-    renderSectionHeader(u8"Маршруты (" .. getRouteCount() .. u8")")
+    renderSectionHeader(u8"РњР°СЂС€СЂСѓС‚С‹ (" .. getRouteCount() .. u8")")
     
     imgui.BeginChild("##routelist", imgui.ImVec2(-1, 150), true)
     for i = 1, getRouteCount() do
         local isActive = (activeRouteIndex == i)
-        local label = (isActive and "* " or "") .. getRouteName(i) .. " (" .. #getRoutePoints(i) .. u8" т., R" .. math.floor(getRouteOreRadius(i)) .. ")"
+        local label = (isActive and "* " or "") .. getRouteName(i) .. " (" .. #getRoutePoints(i) .. u8" С‚., R" .. math.floor(getRouteOreRadius(i)) .. ")"
         
         if imgui.Button(label .. "##routesel" .. i, imgui.ImVec2(i > 1 and 300 or 380, 28)) then
             activeRouteIndex = i
             currentRoutePoint = 1
-            sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}Маршрут ' .. u8:decode(getRouteName(i)) .. ' (' .. #getRoutePoints(i) .. ' точек)', -1)
+            sampAddChatMessage('{cc66ff}[rabotyaga]: {ffffff}РњР°СЂС€СЂСѓС‚ ' .. u8:decode(getRouteName(i)) .. ' (' .. #getRoutePoints(i) .. ' С‚РѕС‡РµРє)', -1)
         end
         
         if i > 1 then
             imgui.SameLine()
             imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.5, 0.15, 0.15, 1.0))
             imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.65, 0.2, 0.2, 1.0))
-            if imgui.Button(u8"Удалить##routedel" .. i, imgui.ImVec2(70, 28)) then
+            if imgui.Button(u8"РЈРґР°Р»РёС‚СЊ##routedel" .. i, imgui.ImVec2(70, 28)) then
                 deleteCustomRoute(i)
             end
             imgui.PopStyleColor(2)
@@ -3714,52 +4302,52 @@ local function renderRouteTab()
     imgui.EndChild()
     
     imgui.Dummy(imgui.ImVec2(0, 10))
-    imgui.Text(u8"Радиус поиска руды (текущий маршрут):")
+    imgui.Text(u8"Р Р°РґРёСѓСЃ РїРѕРёСЃРєР° СЂСѓРґС‹ (С‚РµРєСѓС‰РёР№ РјР°СЂС€СЂСѓС‚):")
     OreRadiusSlider[0] = math.floor(getRouteOreRadius(activeRouteIndex))
     if imgui.SliderInt("##oreradius", OreRadiusSlider, 3, 100) then
         setRouteOreRadius(activeRouteIndex, OreRadiusSlider[0])
     end
-    imgui.TextDisabled(u8"Все руды в этом радиусе от пути бот будет добывать")
+    imgui.TextDisabled(u8"Р’СЃРµ СЂСѓРґС‹ РІ СЌС‚РѕРј СЂР°РґРёСѓСЃРµ РѕС‚ РїСѓС‚Рё Р±РѕС‚ Р±СѓРґРµС‚ РґРѕР±С‹РІР°С‚СЊ")
     
     imgui.Dummy(imgui.ImVec2(0, 10))
-    if imgui.Checkbox(u8"Следующий маршрут (по кругу)", imgui.new.bool(autoRouteSwitch)) then
+    if imgui.Checkbox(u8"РЎР»РµРґСѓСЋС‰РёР№ РјР°СЂС€СЂСѓС‚ (РїРѕ РєСЂСѓРіСѓ)", imgui.new.bool(autoRouteSwitch)) then
         autoRouteSwitch = not autoRouteSwitch
     end
-    imgui.TextDisabled(u8"Круг пройден -> автоматически на следующий")
+    imgui.TextDisabled(u8"РљСЂСѓРі РїСЂРѕР№РґРµРЅ -> Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РЅР° СЃР»РµРґСѓСЋС‰РёР№")
     
     imgui.Dummy(imgui.ImVec2(0, 16))
     imgui.Separator()
     imgui.Dummy(imgui.ImVec2(0, 12))
     
-    renderSectionHeader(u8"Запись нового маршрута")
-    imgui.Text(u8"Нажми Запись, потом иди пешком")
-    imgui.Text(u8"(бег и прыжки запоминаются автоматически),")
-    imgui.Text(u8"потом останови и сохрани маршрут -")
-    imgui.Text(u8"он будет доступен в списке выше.")
-    imgui.Text(u8"Горячая клавиша: F6")
+    renderSectionHeader(u8"Р—Р°РїРёСЃСЊ РЅРѕРІРѕРіРѕ РјР°СЂС€СЂСѓС‚Р°")
+    imgui.Text(u8"РќР°Р¶РјРё Р—Р°РїРёСЃСЊ, РїРѕС‚РѕРј РёРґРё РїРµС€РєРѕРј")
+    imgui.Text(u8"(Р±РµРі Рё РїСЂС‹Р¶РєРё Р·Р°РїРѕРјРёРЅР°СЋС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё),")
+    imgui.Text(u8"РїРѕС‚РѕРј РѕСЃС‚Р°РЅРѕРІРё Рё СЃРѕС…СЂР°РЅРё РјР°СЂС€СЂСѓС‚ -")
+    imgui.Text(u8"РѕРЅ Р±СѓРґРµС‚ РґРѕСЃС‚СѓРїРµРЅ РІ СЃРїРёСЃРєРµ РІС‹С€Рµ.")
+    imgui.Text(u8"Р“РѕСЂСЏС‡Р°СЏ РєР»Р°РІРёС€Р°: F6")
     
     imgui.Dummy(imgui.ImVec2(0, 10))
     
     if not isRecordingRoute then
-        if imgui.Button(u8"Начать запись", imgui.ImVec2(160, 32)) then
+        if imgui.Button(u8"РќР°С‡Р°С‚СЊ Р·Р°РїРёСЃСЊ", imgui.ImVec2(160, 32)) then
             startRouteRecording()
         end
     else
         imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(0.6, 0.15, 0.15, 1.0))
         imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(0.7, 0.2, 0.2, 1.0))
         imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(0.7, 0.2, 0.2, 1.0))
-        if imgui.Button(u8"Остановить запись", imgui.ImVec2(160, 32)) then
+        if imgui.Button(u8"РћСЃС‚Р°РЅРѕРІРёС‚СЊ Р·Р°РїРёСЃСЊ", imgui.ImVec2(160, 32)) then
             stopRouteRecording()
         end
         imgui.PopStyleColor(3)
     end
     
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Запись: " .. (isRecordingRoute and u8"ИДЁТ ЗАПИСЬ" or u8"остановлена"))
-    imgui.Text(u8"Записано точек: " .. #recordingBuffer)
+    imgui.Text(u8"Р—Р°РїРёСЃСЊ: " .. (isRecordingRoute and u8"РР”РЃРў Р—РђРџРРЎР¬" or u8"РѕСЃС‚Р°РЅРѕРІР»РµРЅР°"))
+    imgui.Text(u8"Р—Р°РїРёСЃР°РЅРѕ С‚РѕС‡РµРє: " .. #recordingBuffer)
     
     imgui.Dummy(imgui.ImVec2(0, 10))
-    if imgui.Button(u8"Сохранить как новый маршрут", imgui.ImVec2(220, 32)) then
+    if imgui.Button(u8"РЎРѕС…СЂР°РЅРёС‚СЊ РєР°Рє РЅРѕРІС‹Р№ РјР°СЂС€СЂСѓС‚", imgui.ImVec2(220, 32)) then
         saveRecordingAsNewRoute()
     end
     
@@ -3772,30 +4360,30 @@ local function renderBeerTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
     
-    renderSectionHeader(u8"Авто пиво")
+    renderSectionHeader(u8"РђРІС‚Рѕ РїРёРІРѕ")
     
     licProBanner()
-    if imgui.Checkbox(u8"Включить авто-пиво", imgui.new.bool(beerEnabled)) then
+    if imgui.Checkbox(u8"Р’РєР»СЋС‡РёС‚СЊ Р°РІС‚Рѕ-РїРёРІРѕ", imgui.new.bool(beerEnabled)) then
         beerEnabled = not beerEnabled
     end
     
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Интервал (сек):")
+    imgui.Text(u8"РРЅС‚РµСЂРІР°Р» (СЃРµРє):")
     if imgui.SliderInt("##beerinterval", BeerIntervalSlider, 60, 3600) then
         beerInterval = BeerIntervalSlider[0]
     end
     
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Статус: " .. (beerEnabled and u8"активно" or u8"выключено"))
-    imgui.Text(u8"Интервал: " .. math.floor(beerInterval / 60) .. u8" мин.")
+    imgui.Text(u8"РЎС‚Р°С‚СѓСЃ: " .. (beerEnabled and u8"Р°РєС‚РёРІРЅРѕ" or u8"РІС‹РєР»СЋС‡РµРЅРѕ"))
+    imgui.Text(u8"РРЅС‚РµСЂРІР°Р»: " .. math.floor(beerInterval / 60) .. u8" РјРёРЅ.")
     
     local beerRemain = beerInterval - beerElapsed
     if beerRemain < 0 then beerRemain = 0 end
-    imgui.Text(u8"До следующего пива: " .. math.floor(beerRemain) .. u8" сек.")
+    imgui.Text(u8"Р”Рѕ СЃР»РµРґСѓСЋС‰РµРіРѕ РїРёРІР°: " .. math.floor(beerRemain) .. u8" СЃРµРє.")
     
     imgui.Dummy(imgui.ImVec2(0, 10))
-    imgui.Text(u8"Горячая клавиша: F5")
-    imgui.Text(u8"Команда: /beerbot on/off/toggle")
+    imgui.Text(u8"Р“РѕСЂСЏС‡Р°СЏ РєР»Р°РІРёС€Р°: F5")
+    imgui.Text(u8"РљРѕРјР°РЅРґР°: /beerbot on/off/toggle")
     
     imgui.EndGroup()
 end
@@ -3804,37 +4392,37 @@ function renderRespawnTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
 
-    renderSectionHeader(u8"Респавн руды")
+    renderSectionHeader(u8"Р РµСЃРїР°РІРЅ СЂСѓРґС‹")
 
-    if imgui.Checkbox(u8"Отслеживать респавн", imgui.new.bool(RS.trackEnabled)) then
+    if imgui.Checkbox(u8"РћС‚СЃР»РµР¶РёРІР°С‚СЊ СЂРµСЃРїР°РІРЅ", imgui.new.bool(RS.trackEnabled)) then
         RS.trackEnabled = not RS.trackEnabled
         RS.settingsDirty = true
     end
-    if imgui.Checkbox(u8"Таймеры над рудами в мире", imgui.new.bool(RS.hudEnabled)) then
+    if imgui.Checkbox(u8"РўР°Р№РјРµСЂС‹ РЅР°Рґ СЂСѓРґР°РјРё РІ РјРёСЂРµ", imgui.new.bool(RS.hudEnabled)) then
         RS.hudEnabled = not RS.hudEnabled
         RS.settingsDirty = true
     end
     licProBanner()
-    if imgui.Checkbox(u8"Ждать респавна у места", imgui.new.bool(RS.waitEnabled)) then
+    if imgui.Checkbox(u8"Р–РґР°С‚СЊ СЂРµСЃРїР°РІРЅР° Сѓ РјРµСЃС‚Р°", imgui.new.bool(RS.waitEnabled)) then
         RS.waitEnabled = not RS.waitEnabled
         RS.settingsDirty = true
     end
-    imgui.TextDisabled(u8"Если рядом руды нет, а скоро вырастет - бот ждёт у места")
+    imgui.TextDisabled(u8"Р•СЃР»Рё СЂСЏРґРѕРј СЂСѓРґС‹ РЅРµС‚, Р° СЃРєРѕСЂРѕ РІС‹СЂР°СЃС‚РµС‚ - Р±РѕС‚ Р¶РґС‘С‚ Сѓ РјРµСЃС‚Р°")
 
     imgui.Dummy(imgui.ImVec2(0, 6))
-    imgui.Text(u8"Ждать у места до (сек) до респавна:")
+    imgui.Text(u8"Р–РґР°С‚СЊ Сѓ РјРµСЃС‚Р° РґРѕ (СЃРµРє) РґРѕ СЂРµСЃРїР°РІРЅР°:")
     RS.waitSlider[0] = math.floor(RS.waitMax)
     if imgui.SliderInt("##rswait", RS.waitSlider, 5, 120) then
         RS.waitMax = RS.waitSlider[0]
         RS.settingsDirty = true
     end
-    imgui.Text(u8"Радиус наблюдения (м):")
+    imgui.Text(u8"Р Р°РґРёСѓСЃ РЅР°Р±Р»СЋРґРµРЅРёСЏ (Рј):")
     RS.observeSlider[0] = math.floor(RS.observeRadius)
     if imgui.SliderInt("##rsobserve", RS.observeSlider, 30, 200) then
         RS.observeRadius = RS.observeSlider[0]
         RS.settingsDirty = true
     end
-    imgui.TextDisabled(u8"Дальше этого руда, пропавшая из виду, считается неточной")
+    imgui.TextDisabled(u8"Р”Р°Р»СЊС€Рµ СЌС‚РѕРіРѕ СЂСѓРґР°, РїСЂРѕРїР°РІС€Р°СЏ РёР· РІРёРґСѓ, СЃС‡РёС‚Р°РµС‚СЃСЏ РЅРµС‚РѕС‡РЅРѕР№")
 
     imgui.Dummy(imgui.ImVec2(0, 8))
     imgui.Separator()
@@ -3845,56 +4433,121 @@ function renderRespawnTab()
     end
     local sm = RS.summary
 
-    renderSectionHeader(u8"Что бот знает")
-    imgui.Text(u8"Мест в базе: " .. #RS.spots .. u8", с замерами: " .. sm.withSamples)
-    imgui.Text(u8"Добыто/засечено руды: " .. RS.stats.destroyed .. u8", замеров времени: " .. RS.stats.samples)
-    imgui.TextDisabled(u8"Пропущено: вне зоны " .. RS.stats.streamedOut .. u8", потеряно из виду " .. RS.stats.lostSight)
+    renderSectionHeader(u8"Р§С‚Рѕ Р±РѕС‚ Р·РЅР°РµС‚")
+    imgui.Text(u8"РњРµСЃС‚ РІ Р±Р°Р·Рµ: " .. #RS.spots .. u8", СЃ Р·Р°РјРµСЂР°РјРё: " .. sm.withSamples)
+    imgui.Text(u8"Р”РѕР±С‹С‚Рѕ/Р·Р°СЃРµС‡РµРЅРѕ СЂСѓРґС‹: " .. RS.stats.destroyed .. u8", Р·Р°РјРµСЂРѕРІ РІСЂРµРјРµРЅРё: " .. RS.stats.samples)
+    imgui.TextDisabled(u8"РџСЂРѕРїСѓС‰РµРЅРѕ: РІРЅРµ Р·РѕРЅС‹ " .. RS.stats.streamedOut .. u8", РїРѕС‚РµСЂСЏРЅРѕ РёР· РІРёРґСѓ " .. RS.stats.lostSight)
 
     for t = 1, 5 do
         local m = sm.medians[t]
         if m then
-            imgui.Text(oreNames[t] .. u8": обычно " .. rsFmtTime(m.med) .. u8" (замеров: " .. m.n .. ")")
+            imgui.Text(oreNames[t] .. u8": РѕР±С‹С‡РЅРѕ " .. rsFmtTime(m.med) .. u8" (Р·Р°РјРµСЂРѕРІ: " .. m.n .. ")")
         end
     end
     if next(sm.medians) == nil then
-        imgui.TextDisabled(u8"Замеров пока нет - походи по шахте, пока руда добывается")
+        imgui.TextDisabled(u8"Р—Р°РјРµСЂРѕРІ РїРѕРєР° РЅРµС‚ - РїРѕС…РѕРґРё РїРѕ С€Р°С…С‚Рµ, РїРѕРєР° СЂСѓРґР° РґРѕР±С‹РІР°РµС‚СЃСЏ")
     end
 
     imgui.Dummy(imgui.ImVec2(0, 8))
     if RS.waitingSpot then
-        imgui.TextColored(imgui.ImVec4(0.3, 1.0, 0.4, 1.0), u8"Сейчас бот ждёт респавна у места")
+        imgui.TextColored(imgui.ImVec4(0.3, 1.0, 0.4, 1.0), u8"РЎРµР№С‡Р°СЃ Р±РѕС‚ Р¶РґС‘С‚ СЂРµСЃРїР°РІРЅР° Сѓ РјРµСЃС‚Р°")
     end
 
-    renderSectionHeader(u8"Ждёт респавна (" .. #sm.pending .. u8")")
+    renderSectionHeader(u8"Р–РґС‘С‚ СЂРµСЃРїР°РІРЅР° (" .. #sm.pending .. u8")")
     imgui.BeginChild("##rspending", imgui.ImVec2(-1, 150), true)
     local px, py = getCharCoordinates(PLAYER_PED)
     for i = 1, math.min(#sm.pending, 30) do
         local item = sm.pending[i]
         local s = item.spot
         local t = rsSpotType(s)
-        local name = t and oreNames[t] or u8"Руда"
+        local name = t and oreNames[t] or u8"Р СѓРґР°"
         local when
         if not item.eta then
-            when = u8"неизвестно"
+            when = u8"РЅРµРёР·РІРµСЃС‚РЅРѕ"
         elseif item.eta > 0 then
-            when = u8"через " .. rsFmtTime(item.eta)
+            when = u8"С‡РµСЂРµР· " .. rsFmtTime(item.eta)
         else
-            when = u8"просрочено на " .. rsFmtTime(-item.eta)
+            when = u8"РїСЂРѕСЃСЂРѕС‡РµРЅРѕ РЅР° " .. rsFmtTime(-item.eta)
         end
         local dx, dy = s.x - px, s.y - py
-        imgui.Text(name .. " | " .. when .. " | " .. math.floor(math.sqrt(dx * dx + dy * dy)) .. u8" м")
+        imgui.Text(name .. " | " .. when .. " | " .. math.floor(math.sqrt(dx * dx + dy * dy)) .. u8" Рј")
     end
     if #sm.pending == 0 then
-        imgui.TextDisabled(u8"Пока нет мест, где руда ждёт респавна")
+        imgui.TextDisabled(u8"РџРѕРєР° РЅРµС‚ РјРµСЃС‚, РіРґРµ СЂСѓРґР° Р¶РґС‘С‚ СЂРµСЃРїР°РІРЅР°")
     end
     imgui.EndChild()
 
     imgui.EndGroup()
 end
 
+function renderExtraTab()
+    imgui.SetCursorPos(imgui.ImVec2(20, 20))
+    imgui.BeginGroup()
+
+    renderSectionHeader(u8"Extra")
+
+    imgui.Text(u8"Р’РёР·СѓР°Р»")
+    imgui.Checkbox(u8"Р РµРЅРґРµСЂ РЅР° СЂСѓРґСѓ (РјРµСЃС‚РѕСЂРѕР¶РґРµРЅРёСЏ)", MH.esp)
+    imgui.Checkbox(u8"РњРµСЃС‚Р° РїРѕСЏРІР»РµРЅРёСЏ СЂСѓРґС‹", MH.spots)
+
+    imgui.Dummy(imgui.ImVec2(0, 8))
+    imgui.Separator()
+    imgui.Dummy(imgui.ImVec2(0, 8))
+
+    imgui.Text(u8"РџРµСЂСЃРѕРЅР°Р¶")
+    if imgui.Checkbox(u8"Р‘РµСЃРєРѕРЅРµС‡РЅС‹Р№ Р±РµРі", MH.run) then mhApplyRun() end
+    if imgui.Checkbox(u8"РЎРєРёРЅ CJ", MH.cj) then mhApplyCJ() end
+    imgui.Checkbox(u8"РЎР±РёРІ РЅР° Q", MH.qanim)
+    imgui.TextDisabled(u8"Q - РїСЂРѕРёРіСЂР°С‚СЊ Р°РЅРёРјР°С†РёСЋ СЃР±РёРІР° (РІРЅРµ С‡Р°С‚Р° Рё РґРёР°Р»РѕРіРѕРІ)")
+
+    imgui.Dummy(imgui.ImVec2(0, 8))
+    imgui.Separator()
+    imgui.Dummy(imgui.ImVec2(0, 8))
+
+    imgui.Text(u8"Р‘РѕС‚")
+    imgui.Checkbox(u8"Р‘РµР¶Р°С‚СЊ Рє СЂСѓРґРµ РїРѕ РјР°СЂС€СЂСѓС‚Сѓ (РїРѕ РјРµС‚РєР°Рј)", MH.smart)
+    imgui.TextDisabled(u8"Р‘РѕС‚ Р±РµСЂС‘С‚ РјРµС‚РєРё РјРµСЃС‚РѕСЂРѕР¶РґРµРЅРёР№, Р±РµР¶РёС‚ Рє РЅРёРј РїРѕ Р·Р°РїРёСЃР°РЅРЅРѕРјСѓ РјР°СЂС€СЂСѓС‚Сѓ Рё РєРѕРїР°РµС‚")
+    if MH.smart[0] then
+        imgui.Checkbox(u8"РҐРѕРґРёС‚СЊ Рё Рє РјРµС‚РєР°Рј Р±РµР· РІРёРґРёРјРѕР№ СЂСѓРґС‹", MH.unverified)
+        imgui.TextDisabled(u8"Р’С‹РєР»: С†РµР»СЊ С‚РѕР»СЊРєРѕ С‚Р°Рј, РіРґРµ СЂСЏРґРѕРј СЃ РјРµС‚РєРѕР№ РµСЃС‚СЊ РЅР°СЃС‚РѕСЏС‰Р°СЏ СЂСѓРґР°")
+        imgui.Text(u8"РњР°РєСЃ. СЂР°СЃСЃС‚РѕСЏРЅРёРµ РґРѕ СЂСѓРґС‹ (Рј):")
+        imgui.SliderInt("##mhmax", MH.sMax, 30, 400)
+        imgui.Text(u8"РЎРѕР№С‚Рё СЃ РјР°СЂС€СЂСѓС‚Р° Рє СЂСѓРґРµ Р·Р° (Рј):")
+        imgui.SliderInt("##mhleave", MH.sLeave, 5, 60)
+        imgui.Text(u8"Р Р°РґРёСѓСЃ РїРѕРёСЃРєР° СЂСѓРґС‹ РІРѕРєСЂСѓРі РјРµС‚РєРё (Рј):")
+        imgui.SliderInt("##mhmatch", MH.sMatch, 3, 30)
+        imgui.Text(u8"РџР°СѓР·Р° РґР»СЏ РїСѓСЃС‚РѕРіРѕ РјРµСЃС‚Р° (СЃРµРє):")
+        imgui.SliderInt("##mhpause", MH.sPause, 5, 180)
+        if MH.tgt then
+            local px, py = getCharCoordinates(PLAYER_PED)
+            imgui.TextColored(imgui.ImVec4(0.3, 1.0, 0.4, 1.0), u8"Р¦РµР»СЊ: " .. math.floor(toolsDist2d(px, py, MH.tgt.x, MH.tgt.y)) .. u8" Рј РґРѕ РјРµС‚РєРё")
+        else
+            imgui.TextDisabled(u8"Р¦РµР»Рё РЅРµС‚ - Р±РѕС‚ РёРґС‘С‚ РїРѕ РѕР±С‹С‡РЅРѕРјСѓ РјР°СЂС€СЂСѓС‚Сѓ")
+        end
+    end
+
+    imgui.Dummy(imgui.ImVec2(0, 8))
+    imgui.Separator()
+    imgui.Dummy(imgui.ImVec2(0, 8))
+
+    if imgui.Button(u8"РџРѕРєР°Р·Р°С‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ РІ С‡Р°С‚", imgui.ImVec2(-1, 28)) then
+        local function st(name, v)
+            sampAddChatMessage(name .. (v and ": {26FF00}Р’РєР»СЋС‡РµРЅ" or ": {FF0000}Р’С‹РєР»СЋС‡РµРЅ"), -1)
+        end
+        st("Р РµРЅРґРµСЂ РЅР° СЂСѓРґСѓ", MH.esp[0])
+        st("РњРµСЃС‚Р° РїРѕСЏРІР»РµРЅРёСЏ СЂСѓРґС‹", MH.spots[0])
+        st("Р‘РµСЃРєРѕРЅРµС‡РЅС‹Р№ Р±РµРі", MH.run[0])
+        st("РЎРєРёРЅ CJ", MH.cj[0])
+        st("РЎР±РёРІ РЅР° Q", MH.qanim[0])
+        st("Р‘РµРі Рє СЂСѓРґРµ РїРѕ РјРµС‚РєР°Рј", MH.smart[0])
+    end
+
+    imgui.EndGroup()
+end
+
 -- UI_BLOCK_BEGIN
 -- ================================================================
--- Интерфейс: оптимизация маршрутов и авто-маршрут
+-- РРЅС‚РµСЂС„РµР№СЃ: РѕРїС‚РёРјРёР·Р°С†РёСЏ РјР°СЂС€СЂСѓС‚РѕРІ Рё Р°РІС‚Рѕ-РјР°СЂС€СЂСѓС‚
 -- ================================================================
 function mapCol(r, g, b, a)
     return imgui.ColorConvertFloat4ToU32(imgui.ImVec4(r, g, b, a or 1.0))
@@ -3905,28 +4558,28 @@ function renderRouteTools()
     imgui.Separator()
     imgui.Dummy(imgui.ImVec2(0, 10))
 
-    renderSectionHeader(u8"Оптимизация маршрута")
+    renderSectionHeader(u8"РћРїС‚РёРјРёР·Р°С†РёСЏ РјР°СЂС€СЂСѓС‚Р°")
     licProBanner()
-    imgui.Text(u8"Делает оптимизированную копию выбранного маршрута:")
-    imgui.TextDisabled(u8"убирает лишние точки на прямых, сглаживает путь")
-    imgui.Text(u8"Допуск упрощения (м):")
+    imgui.Text(u8"Р”РµР»Р°РµС‚ РѕРїС‚РёРјРёР·РёСЂРѕРІР°РЅРЅСѓСЋ РєРѕРїРёСЋ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РјР°СЂС€СЂСѓС‚Р°:")
+    imgui.TextDisabled(u8"СѓР±РёСЂР°РµС‚ Р»РёС€РЅРёРµ С‚РѕС‡РєРё РЅР° РїСЂСЏРјС‹С…, СЃРіР»Р°Р¶РёРІР°РµС‚ РїСѓС‚СЊ")
+    imgui.Text(u8"Р”РѕРїСѓСЃРє СѓРїСЂРѕС‰РµРЅРёСЏ (Рј):")
     imgui.SliderFloat("##opttol", TL.optTol, 0.3, 5.0, "%.1f")
-    imgui.Text(u8"Макс. шаг между точками (м):")
+    imgui.Text(u8"РњР°РєСЃ. С€Р°Рі РјРµР¶РґСѓ С‚РѕС‡РєР°РјРё (Рј):")
     imgui.SliderInt("##optgap", TL.optGap, 5, 40)
-    imgui.TextDisabled(u8"Чем меньше шаг, тем лучше бот видит руду рядом с путём")
-    if imgui.Checkbox(u8"Сгладить маршрут", imgui.new.bool(TL.optSmooth)) then
+    imgui.TextDisabled(u8"Р§РµРј РјРµРЅСЊС€Рµ С€Р°Рі, С‚РµРј Р»СѓС‡С€Рµ Р±РѕС‚ РІРёРґРёС‚ СЂСѓРґСѓ СЂСЏРґРѕРј СЃ РїСѓС‚С‘Рј")
+    if imgui.Checkbox(u8"РЎРіР»Р°РґРёС‚СЊ РјР°СЂС€СЂСѓС‚", imgui.new.bool(TL.optSmooth)) then
         TL.optSmooth = not TL.optSmooth
     end
-    if imgui.Checkbox(u8"Замкнуть в круг", imgui.new.bool(TL.optClose)) then
+    if imgui.Checkbox(u8"Р—Р°РјРєРЅСѓС‚СЊ РІ РєСЂСѓРі", imgui.new.bool(TL.optClose)) then
         TL.optClose = not TL.optClose
     end
-    if imgui.Button(u8"Оптимизировать текущий маршрут", imgui.ImVec2(280, 32)) then
+    if imgui.Button(u8"РћРїС‚РёРјРёР·РёСЂРѕРІР°С‚СЊ С‚РµРєСѓС‰РёР№ РјР°СЂС€СЂСѓС‚", imgui.ImVec2(280, 32)) then
         local res, err = toolsOptimizeRoute(activeRouteIndex, TL.optTol[0], TL.optGap[0], TL.optSmooth, TL.optClose)
         if res then
             TL.msgOk = true
-            TL.msg = u8"Готово: точек " .. res.before .. " -> " .. res.after ..
-                u8", длина " .. math.floor(res.lenBefore) .. " -> " .. math.floor(res.lenAfter) ..
-                u8" м. Новый маршрут " .. res.newIndex .. u8" добавлен в список"
+            TL.msg = u8"Р“РѕС‚РѕРІРѕ: С‚РѕС‡РµРє " .. res.before .. " -> " .. res.after ..
+                u8", РґР»РёРЅР° " .. math.floor(res.lenBefore) .. " -> " .. math.floor(res.lenAfter) ..
+                u8" Рј. РќРѕРІС‹Р№ РјР°СЂС€СЂСѓС‚ " .. res.newIndex .. u8" РґРѕР±Р°РІР»РµРЅ РІ СЃРїРёСЃРѕРє"
         else
             TL.msgOk = false
             TL.msg = err
@@ -3937,28 +4590,28 @@ function renderRouteTools()
     imgui.Separator()
     imgui.Dummy(imgui.ImVec2(0, 10))
 
-    renderSectionHeader(u8"Авто-маршрут по базе мест")
+    renderSectionHeader(u8"РђРІС‚Рѕ-РјР°СЂС€СЂСѓС‚ РїРѕ Р±Р°Р·Рµ РјРµСЃС‚")
     licProBanner()
-    imgui.Text(u8"Бот сам строит путь по найденным местам руды вокруг тебя")
-    imgui.TextDisabled(u8"Мест руды в базе: " .. #RS.spots)
-    imgui.Text(u8"Радиус выборки (м):")
+    imgui.Text(u8"Р‘РѕС‚ СЃР°Рј СЃС‚СЂРѕРёС‚ РїСѓС‚СЊ РїРѕ РЅР°Р№РґРµРЅРЅС‹Рј РјРµСЃС‚Р°Рј СЂСѓРґС‹ РІРѕРєСЂСѓРі С‚РµР±СЏ")
+    imgui.TextDisabled(u8"РњРµСЃС‚ СЂСѓРґС‹ РІ Р±Р°Р·Рµ: " .. #RS.spots)
+    imgui.Text(u8"Р Р°РґРёСѓСЃ РІС‹Р±РѕСЂРєРё (Рј):")
     imgui.SliderInt("##arradius", TL.arRadius, 30, 500)
-    imgui.Text(u8"Шаг между точками пути (м):")
+    imgui.Text(u8"РЁР°Рі РјРµР¶РґСѓ С‚РѕС‡РєР°РјРё РїСѓС‚Рё (Рј):")
     imgui.SliderInt("##arstep", TL.arStep, 4, 25)
-    if imgui.Checkbox(u8"Учитывать время респавна", imgui.new.bool(TL.arRespawn)) then
+    if imgui.Checkbox(u8"РЈС‡РёС‚С‹РІР°С‚СЊ РІСЂРµРјСЏ СЂРµСЃРїР°РІРЅР°", imgui.new.bool(TL.arRespawn)) then
         TL.arRespawn = not TL.arRespawn
     end
-    imgui.TextDisabled(u8"Вкл: сначала места, где руда уже выросла. Выкл: просто короткий круг")
-    if imgui.Button(u8"Построить маршрут по базе мест", imgui.ImVec2(280, 32)) then
+    imgui.TextDisabled(u8"Р’РєР»: СЃРЅР°С‡Р°Р»Р° РјРµСЃС‚Р°, РіРґРµ СЂСѓРґР° СѓР¶Рµ РІС‹СЂРѕСЃР»Р°. Р’С‹РєР»: РїСЂРѕСЃС‚Рѕ РєРѕСЂРѕС‚РєРёР№ РєСЂСѓРі")
+    if imgui.Button(u8"РџРѕСЃС‚СЂРѕРёС‚СЊ РјР°СЂС€СЂСѓС‚ РїРѕ Р±Р°Р·Рµ РјРµСЃС‚", imgui.ImVec2(280, 32)) then
         local px, py = getCharCoordinates(PLAYER_PED)
         local res, err = toolsBuildAutoRoute(px, py, TL.arRadius[0], TL.arRespawn, TL.arStep[0])
         if res then
             TL.msgOk = true
-            TL.msg = u8"Маршрут " .. res.newIndex .. u8": мест руды " .. res.spots .. u8", точек пути " .. res.points ..
-                u8", круг ~" .. rsFmtTime(res.loopSec) .. u8" (" .. math.floor(res.length) .. u8" м)"
+            TL.msg = u8"РњР°СЂС€СЂСѓС‚ " .. res.newIndex .. u8": РјРµСЃС‚ СЂСѓРґС‹ " .. res.spots .. u8", С‚РѕС‡РµРє РїСѓС‚Рё " .. res.points ..
+                u8", РєСЂСѓРі ~" .. rsFmtTime(res.loopSec) .. u8" (" .. math.floor(res.length) .. u8" Рј)"
             if res.maxMed > 0 and res.loopSec < res.maxMed then
-                TL.msg = TL.msg .. u8". Круг короче респавна (" .. rsFmtTime(res.maxMed) ..
-                    u8"): бот будет немного ждать у мест с рудой"
+                TL.msg = TL.msg .. u8". РљСЂСѓРі РєРѕСЂРѕС‡Рµ СЂРµСЃРїР°РІРЅР° (" .. rsFmtTime(res.maxMed) ..
+                    u8"): Р±РѕС‚ Р±СѓРґРµС‚ РЅРµРјРЅРѕРіРѕ Р¶РґР°С‚СЊ Сѓ РјРµСЃС‚ СЃ СЂСѓРґРѕР№"
             end
         else
             TL.msgOk = false
@@ -3979,21 +4632,21 @@ function renderMapTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
 
-    renderSectionHeader(u8"Карта")
+    renderSectionHeader(u8"РљР°СЂС‚Р°")
 
-    if imgui.Checkbox(u8"Следить за мной", imgui.new.bool(MAP.follow)) then
+    if imgui.Checkbox(u8"РЎР»РµРґРёС‚СЊ Р·Р° РјРЅРѕР№", imgui.new.bool(MAP.follow)) then
         MAP.follow = not MAP.follow
     end
     imgui.SameLine()
-    if imgui.Checkbox(u8"Все маршруты", imgui.new.bool(MAP.showAll)) then
+    if imgui.Checkbox(u8"Р’СЃРµ РјР°СЂС€СЂСѓС‚С‹", imgui.new.bool(MAP.showAll)) then
         MAP.showAll = not MAP.showAll
     end
     imgui.SameLine()
-    if imgui.Checkbox(u8"Игроки", imgui.new.bool(MAP.showPlayers)) then
+    if imgui.Checkbox(u8"РРіСЂРѕРєРё", imgui.new.bool(MAP.showPlayers)) then
         MAP.showPlayers = not MAP.showPlayers
     end
     imgui.SameLine()
-    if imgui.Button(u8"Показать всё", imgui.ImVec2(110, 24)) then
+    if imgui.Button(u8"РџРѕРєР°Р·Р°С‚СЊ РІСЃС‘", imgui.ImVec2(110, 24)) then
         mapFitAll()
     end
 
@@ -4002,7 +4655,7 @@ function renderMapTab()
         MAP.viewMeters = MAP.zoomSlider[0]
     end
     imgui.SameLine()
-    imgui.Text(u8"Ширина карты, м")
+    imgui.Text(u8"РЁРёСЂРёРЅР° РєР°СЂС‚С‹, Рј")
 
     local W, H = MAP.W, MAP.H
     local px, py = getCharCoordinates(PLAYER_PED)
@@ -4034,14 +4687,14 @@ function renderMapTab()
         return p0.x + W / 2 + (wx - cx) * scale, p0.y + H / 2 - (wy - cy) * scale
     end
 
-    -- рисуем покрытие маршрута рудой
+    -- СЂРёСЃСѓРµРј РїРѕРєСЂС‹С‚РёРµ РјР°СЂС€СЂСѓС‚Р° СЂСѓРґРѕР№
     local activeCov = mapUpdateCoverage(activeRouteIndex, 80)
 
     local dl = imgui.GetWindowDrawList()
     dl:PushClipRect(p0, p1, true)
     dl:AddRectFilled(p0, p1, mapCol(0.05, 0.06, 0.08, 1.0))
 
-    -- маршруты
+    -- РјР°СЂС€СЂСѓС‚С‹
     local list = {}
     if MAP.showAll then
         for i = 1, getRouteCount() do list[#list + 1] = i end
@@ -4088,7 +4741,7 @@ function renderMapTab()
         end
     end
 
-    -- места руды
+    -- РјРµСЃС‚Р° СЂСѓРґС‹
     local mp = imgui.GetMousePos()
     local hoverSpot, hoverD = nil, 8
     for i = 1, #RS.spots do
@@ -4111,7 +4764,7 @@ function renderMapTab()
         end
     end
 
-    -- другие игроки
+    -- РґСЂСѓРіРёРµ РёРіСЂРѕРєРё
     if MAP.showPlayers then
         for _, ped in ipairs(getAllChars()) do
             if ped ~= PLAYER_PED then
@@ -4122,7 +4775,7 @@ function renderMapTab()
         end
     end
 
-    -- цель бота
+    -- С†РµР»СЊ Р±РѕС‚Р°
     local mx, my = toScreen(px, py)
     if MAP.showBot and BOT.kind and BOT.kind ~= 'afk' then
         local tx, ty = toScreen(BOT.x, BOT.y)
@@ -4130,7 +4783,7 @@ function renderMapTab()
         dl:AddCircle(imgui.ImVec2(tx, ty), 8, mapCol(0.2, 0.9, 1.0, 1.0), 16, 2)
     end
 
-    -- Мы: стрелка по направлению взгляда
+    -- РњС‹: СЃС‚СЂРµР»РєР° РїРѕ РЅР°РїСЂР°РІР»РµРЅРёСЋ РІР·РіР»СЏРґР°
     local h = math.rad(getCharHeading(PLAYER_PED))
     local dx, dy = -math.sin(h), -math.cos(h)
     local qx, qy = -dy, dx
@@ -4140,7 +4793,7 @@ function renderMapTab()
         imgui.ImVec2(mx - dx * 6 - qx * 6, my - dy * 6 - qy * 6),
         mapCol(1.0, 1.0, 1.0, 1.0))
 
-    -- масштабная линейка и север
+    -- РјР°СЃС€С‚Р°Р±РЅР°СЏ Р»РёРЅРµР№РєР° Рё СЃРµРІРµСЂ
     local barM = 10
     for _, v in ipairs({10, 25, 50, 100, 250, 500, 1000, 2000}) do
         barM = v
@@ -4149,46 +4802,46 @@ function renderMapTab()
     local bx0, by0 = p0.x + 12, p1.y - 14
     local white = mapCol(0.85, 0.85, 0.85, 1.0)
     dl:AddLine(imgui.ImVec2(bx0, by0), imgui.ImVec2(bx0 + barM * scale, by0), white, 2)
-    dl:AddText(imgui.ImVec2(bx0, by0 - 18), white, barM .. u8" м")
-    dl:AddText(imgui.ImVec2(p1.x - 20, p0.y + 6), white, u8"С")
+    dl:AddText(imgui.ImVec2(bx0, by0 - 18), white, barM .. u8" Рј")
+    dl:AddText(imgui.ImVec2(p1.x - 20, p0.y + 6), white, u8"РЎ")
     dl:PopClipRect()
 
-    -- подсказка на карте при наведении
+    -- РїРѕРґСЃРєР°Р·РєР° РЅР° РєР°СЂС‚Рµ РїСЂРё РЅР°РІРµРґРµРЅРёРё
     if hovered and hoverSpot and not imgui.IsMouseDragging(0) then
         local s = hoverSpot
         local t = rsSpotType(s)
         imgui.BeginTooltip()
-        imgui.Text((t and oreNames[t] or u8"Руда") .. u8", " .. math.floor(toolsDist2d(s.x, s.y, px, py)) .. u8" м от тебя")
+        imgui.Text((t and oreNames[t] or u8"Р СѓРґР°") .. u8", " .. math.floor(toolsDist2d(s.x, s.y, px, py)) .. u8" Рј РѕС‚ С‚РµР±СЏ")
         if s.present then
-            imgui.Text(u8"Статус: руда есть")
+            imgui.Text(u8"РЎС‚Р°С‚СѓСЃ: СЂСѓРґР° РµСЃС‚СЊ")
         elseif s.depletedAt then
             local eta = rsSpotEta(s)
             if not eta then
-                imgui.Text(u8"Статус: нет сведений (вне зоны)")
+                imgui.Text(u8"РЎС‚Р°С‚СѓСЃ: РЅРµС‚ СЃРІРµРґРµРЅРёР№ (РІРЅРµ Р·РѕРЅС‹)")
             elseif eta > 0 then
-                imgui.Text(u8"Статус: вырастет через " .. rsFmtTime(eta))
+                imgui.Text(u8"РЎС‚Р°С‚СѓСЃ: РІС‹СЂР°СЃС‚РµС‚ С‡РµСЂРµР· " .. rsFmtTime(eta))
             else
-                imgui.Text(u8"Статус: просрочено на " .. rsFmtTime(-eta))
+                imgui.Text(u8"РЎС‚Р°С‚СѓСЃ: РїСЂРѕСЃСЂРѕС‡РµРЅРѕ РЅР° " .. rsFmtTime(-eta))
             end
         else
-            imgui.Text(u8"Статус: нет данных (ещё не видели)")
+            imgui.Text(u8"РЎС‚Р°С‚СѓСЃ: РЅРµС‚ РґР°РЅРЅС‹С… (РµС‰С‘ РЅРµ РІРёРґРµР»Рё)")
         end
         if s.med then
-            imgui.Text(u8"Обычно растёт " .. rsFmtTime(s.med) .. u8" (замеров: " .. #s.samples .. ")")
+            imgui.Text(u8"РћР±С‹С‡РЅРѕ СЂР°СЃС‚С‘С‚ " .. rsFmtTime(s.med) .. u8" (Р·Р°РјРµСЂРѕРІ: " .. #s.samples .. ")")
         end
         imgui.EndTooltip()
     end
 
-    -- легенда и сводка
-    imgui.TextColored(imgui.ImVec4(0.25, 0.9, 0.35, 1.0), u8"Руда есть")
+    -- Р»РµРіРµРЅРґР° Рё СЃРІРѕРґРєР°
+    imgui.TextColored(imgui.ImVec4(0.25, 0.9, 0.35, 1.0), u8"Р СѓРґР° РµСЃС‚СЊ")
     imgui.SameLine()
-    imgui.TextColored(imgui.ImVec4(1.0, 0.82, 0.25, 1.0), u8"Ждёт респавна")
+    imgui.TextColored(imgui.ImVec4(1.0, 0.82, 0.25, 1.0), u8"Р–РґС‘С‚ СЂРµСЃРїР°РІРЅР°")
     imgui.SameLine()
-    imgui.TextColored(imgui.ImVec4(0.6, 0.6, 0.6, 1.0), u8"Нет данных")
+    imgui.TextColored(imgui.ImVec4(0.6, 0.6, 0.6, 1.0), u8"РќРµС‚ РґР°РЅРЅС‹С…")
     imgui.SameLine()
-    imgui.TextColored(imgui.ImVec4(1.0, 0.3, 0.3, 1.0), u8"Пустой участок")
+    imgui.TextColored(imgui.ImVec4(1.0, 0.3, 0.3, 1.0), u8"РџСѓСЃС‚РѕР№ СѓС‡Р°СЃС‚РѕРє")
     imgui.SameLine()
-    imgui.TextColored(imgui.ImVec4(0.2, 0.9, 1.0, 1.0), u8"Цель бота")
+    imgui.TextColored(imgui.ImVec4(0.2, 0.9, 1.0, 1.0), u8"Р¦РµР»СЊ Р±РѕС‚Р°")
 
     local empty, total = 0, 0
     for i = 1, activeCov.n do
@@ -4198,19 +4851,19 @@ function renderMapTab()
             if st == 0 then empty = empty + 1 end
         end
     end
-    imgui.Text(u8"Маршрут: " .. getRouteName(activeRouteIndex))
+    imgui.Text(u8"РњР°СЂС€СЂСѓС‚: " .. getRouteName(activeRouteIndex))
     if total > 0 then
-        imgui.Text(u8"Пустых участков: " .. empty .. u8" из " .. total .. u8" (" .. math.floor(empty * 100 / total) .. u8"%)")
+        imgui.Text(u8"РџСѓСЃС‚С‹С… СѓС‡Р°СЃС‚РєРѕРІ: " .. empty .. u8" РёР· " .. total .. u8" (" .. math.floor(empty * 100 / total) .. u8"%)")
     end
 
-    local botText = u8"Выключен"
+    local botText = u8"Р’С‹РєР»СЋС‡РµРЅ"
     if mode then
-        local names = {mine = u8"Копает руду", ore = u8"Идёт к руде", wait = u8"Ждёт респавна у места",
-                       route = u8"Идёт по маршруту", afk = u8"АФК-отдых"}
-        botText = names[BOT.kind] or u8"Работает"
+        local names = {mine = u8"РљРѕРїР°РµС‚ СЂСѓРґСѓ", ore = u8"РРґС‘С‚ Рє СЂСѓРґРµ", wait = u8"Р–РґС‘С‚ СЂРµСЃРїР°РІРЅР° Сѓ РјРµСЃС‚Р°",
+                       route = u8"РРґС‘С‚ РїРѕ РјР°СЂС€СЂСѓС‚Сѓ", afk = u8"РђР¤Рљ-РѕС‚РґС‹С…"}
+        botText = names[BOT.kind] or u8"Р Р°Р±РѕС‚Р°РµС‚"
     end
-    imgui.Text(u8"Бот: " .. botText)
-    imgui.TextDisabled(u8"Колесо мыши - масштаб, перетаскивание - сдвиг карты")
+    imgui.Text(u8"Р‘РѕС‚: " .. botText)
+    imgui.TextDisabled(u8"РљРѕР»РµСЃРѕ РјС‹С€Рё - РјР°СЃС€С‚Р°Р±, РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРµ - СЃРґРІРёРі РєР°СЂС‚С‹")
 
     imgui.EndGroup()
 end
@@ -4218,7 +4871,7 @@ end
 
 -- TGUI_BLOCK_BEGIN
 -- ================================================================
--- Интерфейс: вкладка «Telegram»
+-- РРЅС‚РµСЂС„РµР№СЃ: РІРєР»Р°РґРєР° В«TelegramВ»
 -- ================================================================
 function tgUiCheck(label, field)
     if imgui.Checkbox(label, imgui.new.bool(TG[field])) then
@@ -4234,37 +4887,37 @@ function renderTelegramTab()
     renderSectionHeader(u8"Telegram")
 
     licProBanner()
-    if imgui.Checkbox(u8"Включить Telegram", imgui.new.bool(TG.enabled)) then
+    if imgui.Checkbox(u8"Р’РєР»СЋС‡РёС‚СЊ Telegram", imgui.new.bool(TG.enabled)) then
         TG.enabled = not TG.enabled
         TG.settingsDirty = true
     end
 
     imgui.Dummy(imgui.ImVec2(0, 4))
-    imgui.Text(u8"Токен бота (получить у @BotFather):")
+    imgui.Text(u8"РўРѕРєРµРЅ Р±РѕС‚Р° (РїРѕР»СѓС‡РёС‚СЊ Сѓ @BotFather):")
     imgui.PushItemWidth(400)
     imgui.InputText("##tgtoken", TG.tokenBuf, ffi.sizeof(TG.tokenBuf), imgui.InputTextFlags.Password)
-    imgui.Text(u8"Chat ID (твой или чата):")
+    imgui.Text(u8"Chat ID (С‚РІРѕР№ РёР»Рё С‡Р°С‚Р°):")
     imgui.InputText("##tgchat", TG.chatBuf, ffi.sizeof(TG.chatBuf))
     imgui.PopItemWidth()
 
-    if imgui.Button(u8"Сохранить", imgui.ImVec2(120, 28)) then
+    if imgui.Button(u8"РЎРѕС…СЂР°РЅРёС‚СЊ", imgui.ImVec2(120, 28)) then
         tgApplyCredentials(ffi.string(TG.tokenBuf), ffi.string(TG.chatBuf))
         if TG.token ~= "" and not tgTokenLooksValid(TG.token) then
-            TG.status = "Токен выглядит неправильно: должен быть вида 123456:ABC..."
+            TG.status = "РўРѕРєРµРЅ РІС‹РіР»СЏРґРёС‚ РЅРµРїСЂР°РІРёР»СЊРЅРѕ: РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІРёРґР° 123456:ABC..."
             TG.statusOk = false
         else
-            TG.status = "Сохранено"
+            TG.status = "РЎРѕС…СЂР°РЅРµРЅРѕ"
             TG.statusOk = true
         end
     end
     imgui.SameLine()
-    if imgui.Button(u8"Проверить связь", imgui.ImVec2(150, 28)) then
+    if imgui.Button(u8"РџСЂРѕРІРµСЂРёС‚СЊ СЃРІСЏР·СЊ", imgui.ImVec2(150, 28)) then
         tgSendTest()
     end
     imgui.SameLine()
-    if imgui.Button((TG.discover and u8"Остановить поиск" or u8"Найти мой chat_id"), imgui.ImVec2(170, 28)) then
+    if imgui.Button((TG.discover and u8"РћСЃС‚Р°РЅРѕРІРёС‚СЊ РїРѕРёСЃРє" or u8"РќР°Р№С‚Рё РјРѕР№ chat_id"), imgui.ImVec2(170, 28)) then
         if TG.token == "" then
-            TG.status = "Сначала введи токен и нажми Сохранить"
+            TG.status = "РЎРЅР°С‡Р°Р»Р° РІРІРµРґРё С‚РѕРєРµРЅ Рё РЅР°Р¶РјРё РЎРѕС…СЂР°РЅРёС‚СЊ"
             TG.statusOk = false
         else
             TG.discover = not TG.discover
@@ -4273,16 +4926,16 @@ function renderTelegramTab()
     end
 
     if TG.discover then
-        imgui.TextWrapped(u8"Теперь открой бота в Telegram, нажми Start и пришли ему любое сообщение - тут появится чат.")
+        imgui.TextWrapped(u8"РўРµРїРµСЂСЊ РѕС‚РєСЂРѕР№ Р±РѕС‚Р° РІ Telegram, РЅР°Р¶РјРё Start Рё РїСЂРёС€Р»Рё РµРјСѓ Р»СЋР±РѕРµ СЃРѕРѕР±С‰РµРЅРёРµ - С‚СѓС‚ РїРѕСЏРІРёС‚СЃСЏ С‡Р°С‚.")
         if TG.found then
-            imgui.TextColored(imgui.ImVec4(0.4, 1.0, 0.5, 1.0), u8"Найден чат: " .. TG.found.id .. (TG.found.name ~= "" and (" (" .. TG.found.name .. ")") or ""))
-            if imgui.Button(u8"Использовать этот чат", imgui.ImVec2(200, 26)) then
+            imgui.TextColored(imgui.ImVec4(0.4, 1.0, 0.5, 1.0), u8"РќР°Р№РґРµРЅ С‡Р°С‚: " .. TG.found.id .. (TG.found.name ~= "" and (" (" .. TG.found.name .. ")") or ""))
+            if imgui.Button(u8"РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЌС‚РѕС‚ С‡Р°С‚", imgui.ImVec2(200, 26)) then
                 ffi.fill(TG.chatBuf, ffi.sizeof(TG.chatBuf), 0)
                 ffi.copy(TG.chatBuf, TG.found.id)
                 tgApplyCredentials(ffi.string(TG.tokenBuf), TG.found.id)
                 TG.discover = false
                 TG.found = nil
-                TG.status = "Chat ID сохранён"
+                TG.status = "Chat ID СЃРѕС…СЂР°РЅС‘РЅ"
                 TG.statusOk = true
             end
         end
@@ -4295,35 +4948,35 @@ function renderTelegramTab()
         imgui.PopStyleColor(1)
     end
     local tr = TG.transport
-    imgui.TextDisabled(u8"Канал: " .. (tr == nil and u8"поток не запущен" or (tr ~= "" and tr or u8"нет HTTPS-библиотеки")) ..
-        u8" | отправлено " .. TG.sent .. u8", ошибок " .. TG.failed .. u8", в очереди " .. #TG.queue)
+    imgui.TextDisabled(u8"РљР°РЅР°Р»: " .. (tr == nil and u8"РїРѕС‚РѕРє РЅРµ Р·Р°РїСѓС‰РµРЅ" or (tr ~= "" and tr or u8"РЅРµС‚ HTTPS-Р±РёР±Р»РёРѕС‚РµРєРё")) ..
+        u8" | РѕС‚РїСЂР°РІР»РµРЅРѕ " .. TG.sent .. u8", РѕС€РёР±РѕРє " .. TG.failed .. u8", РІ РѕС‡РµСЂРµРґРё " .. #TG.queue)
     if TG.chatId:sub(1, 1) == "-" and TG.cmds then
-        imgui.TextColored(imgui.ImVec4(1.0, 0.7, 0.3, 1.0), u8"Это группа: управлять ботом сможет любой участник чата!")
+        imgui.TextColored(imgui.ImVec4(1.0, 0.7, 0.3, 1.0), u8"Р­С‚Рѕ РіСЂСѓРїРїР°: СѓРїСЂР°РІР»СЏС‚СЊ Р±РѕС‚РѕРј СЃРјРѕР¶РµС‚ Р»СЋР±РѕР№ СѓС‡Р°СЃС‚РЅРёРє С‡Р°С‚Р°!")
     end
 
     imgui.Dummy(imgui.ImVec2(0, 8))
     imgui.Separator()
     imgui.Dummy(imgui.ImVec2(0, 8))
 
-    renderSectionHeader(u8"О чём сообщать")
-    tgUiCheck(u8"Бот запущен / остановлен", "evStartStop")
-    tgUiCheck(u8"Администратор в игре", "evAdmin")
-    tgUiCheck(u8"Бот застрял", "evStuck")
+    renderSectionHeader(u8"Рћ С‡С‘Рј СЃРѕРѕР±С‰Р°С‚СЊ")
+    tgUiCheck(u8"Р‘РѕС‚ Р·Р°РїСѓС‰РµРЅ / РѕСЃС‚Р°РЅРѕРІР»РµРЅ", "evStartStop")
+    tgUiCheck(u8"РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ РІ РёРіСЂРµ", "evAdmin")
+    tgUiCheck(u8"Р‘РѕС‚ Р·Р°СЃС‚СЂСЏР»", "evStuck")
     if TG.evStuck then
-        imgui.Text(u8"Считать застреванием через (сек):")
+        imgui.Text(u8"РЎС‡РёС‚Р°С‚СЊ Р·Р°СЃС‚СЂРµРІР°РЅРёРµРј С‡РµСЂРµР· (СЃРµРє):")
         TG.stuckSlider[0] = math.floor(TG.stuckSec)
         if imgui.SliderInt("##tgstuck", TG.stuckSlider, 10, 120) then
             TG.stuckSec = TG.stuckSlider[0]
             TG.settingsDirty = true
         end
     end
-    tgUiCheck(u8"Телепорт / откат (скачок координат)", "evTeleport")
-    tgUiCheck(u8"Остановить бота при скачке координат", "stopOnTp")
-    tgUiCheck(u8"АФК-отдых", "evAfk")
-    tgUiCheck(u8"Цель добычи выполнена", "evGoal")
-    tgUiCheck(u8"Периодический отчёт по добыче", "evHourly")
+    tgUiCheck(u8"РўРµР»РµРїРѕСЂС‚ / РѕС‚РєР°С‚ (СЃРєР°С‡РѕРє РєРѕРѕСЂРґРёРЅР°С‚)", "evTeleport")
+    tgUiCheck(u8"РћСЃС‚Р°РЅРѕРІРёС‚СЊ Р±РѕС‚Р° РїСЂРё СЃРєР°С‡РєРµ РєРѕРѕСЂРґРёРЅР°С‚", "stopOnTp")
+    tgUiCheck(u8"РђР¤Рљ-РѕС‚РґС‹С…", "evAfk")
+    tgUiCheck(u8"Р¦РµР»СЊ РґРѕР±С‹С‡Рё РІС‹РїРѕР»РЅРµРЅР°", "evGoal")
+    tgUiCheck(u8"РџРµСЂРёРѕРґРёС‡РµСЃРєРёР№ РѕС‚С‡С‘С‚ РїРѕ РґРѕР±С‹С‡Рµ", "evHourly")
     if TG.evHourly then
-        imgui.Text(u8"Раз в (мин):")
+        imgui.Text(u8"Р Р°Р· РІ (РјРёРЅ):")
         TG.hourlySlider[0] = math.floor(TG.hourlyMin)
         if imgui.SliderInt("##tghourly", TG.hourlySlider, 5, 240) then
             TG.hourlyMin = TG.hourlySlider[0]
@@ -4335,13 +4988,13 @@ function renderTelegramTab()
     imgui.Separator()
     imgui.Dummy(imgui.ImVec2(0, 8))
 
-    renderSectionHeader(u8"Управление из Telegram")
-    tgUiCheck(u8"Принимать команды", "cmds")
-    imgui.TextWrapped(u8"Команды: /status /report /run /stop /route N /beer on|off /pos /help. " ..
-        u8"Работают только из чата, указанного выше; остальные, незнакомые, игнорируются.")
+    renderSectionHeader(u8"РЈРїСЂР°РІР»РµРЅРёРµ РёР· Telegram")
+    tgUiCheck(u8"РџСЂРёРЅРёРјР°С‚СЊ РєРѕРјР°РЅРґС‹", "cmds")
+    imgui.TextWrapped(u8"РљРѕРјР°РЅРґС‹: /status /report /run /stop /route N /beer on|off /pos /help. " ..
+        u8"Р Р°Р±РѕС‚Р°СЋС‚ С‚РѕР»СЊРєРѕ РёР· С‡Р°С‚Р°, СѓРєР°Р·Р°РЅРЅРѕРіРѕ РІС‹С€Рµ; РѕСЃС‚Р°Р»СЊРЅС‹Рµ, РЅРµР·РЅР°РєРѕРјС‹Рµ, РёРіРЅРѕСЂРёСЂСѓСЋС‚СЃСЏ.")
 
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.TextDisabled(u8"Токен хранится открытым текстом в autominev2.ini - не показывай этот файл другим.")
+    imgui.TextDisabled(u8"РўРѕРєРµРЅ С…СЂР°РЅРёС‚СЃСЏ РѕС‚РєСЂС‹С‚С‹Рј С‚РµРєСЃС‚РѕРј РІ autominev2.ini - РЅРµ РїРѕРєР°Р·С‹РІР°Р№ СЌС‚РѕС‚ С„Р°Р№Р» РґСЂСѓРіРёРј.")
 
     imgui.EndGroup()
 end
@@ -4353,17 +5006,17 @@ function renderMineDistSection()
     imgui.Dummy(imgui.ImVec2(0, 8))
     imgui.Separator()
     imgui.Dummy(imgui.ImVec2(0, 4))
-    renderSectionHeader(u8"Добыча руды")
-    imgui.Text(u8"Начинать добычу, когда до руды (м):")
+    renderSectionHeader(u8"Р”РѕР±С‹С‡Р° СЂСѓРґС‹")
+    imgui.Text(u8"РќР°С‡РёРЅР°С‚СЊ РґРѕР±С‹С‡Сѓ, РєРѕРіРґР° РґРѕ СЂСѓРґС‹ (Рј):")
     MINE.sDist[0] = MINE.dist
     if imgui.SliderFloat("##minedist", MINE.sDist, 0.3, 1.5, "%.1f") then
         MINE.dist = MINE.sDist[0]
         NAV.settingsDirty = true
     end
-    imgui.TextDisabled(u8"Бот подходит к руде вплотную и копает, только когда стоит на ней")
+    imgui.TextDisabled(u8"Р‘РѕС‚ РїРѕРґС…РѕРґРёС‚ Рє СЂСѓРґРµ РІРїР»РѕС‚РЅСѓСЋ Рё РєРѕРїР°РµС‚, С‚РѕР»СЊРєРѕ РєРѕРіРґР° СЃС‚РѕРёС‚ РЅР° РЅРµР№")
 end
 
--- Плавная прокрутка списков (колесо мыши плавно догоняет цель)
+-- РџР»Р°РІРЅР°СЏ РїСЂРѕРєСЂСѓС‚РєР° СЃРїРёСЃРєРѕРІ (РєРѕР»РµСЃРѕ РјС‹С€Рё РїР»Р°РІРЅРѕ РґРѕРіРѕРЅСЏРµС‚ С†РµР»СЊ)
 SMOOTH = {}
 function smoothScrollBegin(id)
     pcall(function()
@@ -4390,12 +5043,12 @@ end
 
 function licProBanner()
     if licPro() then return end
-    imgui.TextColored(imgui.ImVec4(1.0, 0.7, 0.3, 1.0), u8"Функция по подписке Про. Ключ вводится на вкладке Подписка")
-    if imgui.SmallButton(u8"Купить подписку##banner") then licOpenSite() end
+    imgui.TextColored(imgui.ImVec4(1.0, 0.7, 0.3, 1.0), u8"Р¤СѓРЅРєС†РёСЏ РїРѕ РїРѕРґРїРёСЃРєРµ РџСЂРѕ. РљР»СЋС‡ РІРІРѕРґРёС‚СЃСЏ РЅР° РІРєР»Р°РґРєРµ РџРѕРґРїРёСЃРєР°")
+    if imgui.SmallButton(u8"РљСѓРїРёС‚СЊ РїРѕРґРїРёСЃРєСѓ##banner") then licOpenSite() end
     imgui.Dummy(imgui.ImVec2(0, 4))
 end
 
--- Разделы, целиком доступные только по подписке (номера вкладок): Коллизия, Пиво, Респавн, Карта, Telegram, ИИ пути
+-- Р Р°Р·РґРµР»С‹, С†РµР»РёРєРѕРј РґРѕСЃС‚СѓРїРЅС‹Рµ С‚РѕР»СЊРєРѕ РїРѕ РїРѕРґРїРёСЃРєРµ (РЅРѕРјРµСЂР° РІРєР»Р°РґРѕРє): РљРѕР»Р»РёР·РёСЏ, РџРёРІРѕ, Extra, РљР°СЂС‚Р°, Telegram, РР РїСѓС‚Рё
 LIC_LOCKED_TABS = {[4] = true, [7] = true, [8] = true, [9] = true, [10] = true, [11] = true}
 
 function licTabLocked(id)
@@ -4416,18 +5069,18 @@ function renderLicTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
 
-    renderSectionHeader(u8"Подписка Про")
+    renderSectionHeader(u8"РџРѕРґРїРёСЃРєР° РџСЂРѕ")
 
     if LIC_DEV_UNLOCK then
-        imgui.TextColored(imgui.ImVec4(1.0, 0.7, 0.3, 1.0), u8"РЕЖИМ РАЗРАБОТЧИКА: Про открыт без ключа")
+        imgui.TextColored(imgui.ImVec4(1.0, 0.7, 0.3, 1.0), u8"Р Р•Р–РРњ Р РђР—Р РђР‘РћРўР§РРљРђ: РџСЂРѕ РѕС‚РєСЂС‹С‚ Р±РµР· РєР»СЋС‡Р°")
     elseif licPro() then
         if LIC.untilTs >= 4000000000 then
-            imgui.TextColored(imgui.ImVec4(0.3, 1.0, 0.4, 1.0), u8"Подписка активна: навсегда")
+            imgui.TextColored(imgui.ImVec4(0.3, 1.0, 0.4, 1.0), u8"РџРѕРґРїРёСЃРєР° Р°РєС‚РёРІРЅР°: РЅР°РІСЃРµРіРґР°")
         else
-            imgui.TextColored(imgui.ImVec4(0.3, 1.0, 0.4, 1.0), u8"Подписка активна до " .. (os.date("%d.%m.%Y %H:%M", LIC.untilTs) or "?"))
+            imgui.TextColored(imgui.ImVec4(0.3, 1.0, 0.4, 1.0), u8"РџРѕРґРїРёСЃРєР° Р°РєС‚РёРІРЅР° РґРѕ " .. (os.date("%d.%m.%Y %H:%M", LIC.untilTs) or "?"))
         end
     else
-        imgui.TextColored(imgui.ImVec4(1.0, 0.4, 0.4, 1.0), u8"Подписка не активна")
+        imgui.TextColored(imgui.ImVec4(1.0, 0.4, 0.4, 1.0), u8"РџРѕРґРїРёСЃРєР° РЅРµ Р°РєС‚РёРІРЅР°")
     end
     if LIC.msg ~= "" then
         imgui.TextWrapped(u8(LIC.msg))
@@ -4435,49 +5088,49 @@ function renderLicTab()
 
     if not licPro() then
         imgui.Dummy(imgui.ImVec2(0, 8))
-        if imgui.Button(u8"Купить подписку", imgui.ImVec2(200, 32)) then licOpenSite() end
+        if imgui.Button(u8"РљСѓРїРёС‚СЊ РїРѕРґРїРёСЃРєСѓ", imgui.ImVec2(200, 32)) then licOpenSite() end
         imgui.SameLine()
-        imgui.TextDisabled(u8"откроется сайт в браузере")
-        imgui.Text(u8"Ссылка на сайт:")
+        imgui.TextDisabled(u8"РѕС‚РєСЂРѕРµС‚СЃСЏ СЃР°Р№С‚ РІ Р±СЂР°СѓР·РµСЂРµ")
+        imgui.Text(u8"РЎСЃС‹Р»РєР° РЅР° СЃР°Р№С‚:")
         local ro0 = imgui.InputTextFlags and imgui.InputTextFlags.ReadOnly or 0
         imgui.InputText("##licsite", LIC.siteBuf, ffi.sizeof(LIC.siteBuf), ro0)
     end
 
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Ключ:")
+    imgui.Text(u8"РљР»СЋС‡:")
     imgui.InputText("##lickey", LIC.keyBuf, ffi.sizeof(LIC.keyBuf))
-    if imgui.Button(u8"Активировать", imgui.ImVec2(150, 28)) then
+    if imgui.Button(u8"РђРєС‚РёРІРёСЂРѕРІР°С‚СЊ", imgui.ImVec2(150, 28)) then
         LIC.key = ffi.string(LIC.keyBuf):gsub("^%s+", ""):gsub("%s+$", "")
         licSaveKey()
         LIC.want = true
     end
     imgui.SameLine()
-    if imgui.Button(u8"Проверить снова", imgui.ImVec2(150, 28)) then
+    if imgui.Button(u8"РџСЂРѕРІРµСЂРёС‚СЊ СЃРЅРѕРІР°", imgui.ImVec2(150, 28)) then
         LIC.want = true
     end
 
     imgui.Dummy(imgui.ImVec2(0, 8))
-    imgui.Text(u8"Ваш ID компьютера (сообщите продавцу):")
+    imgui.Text(u8"Р’Р°С€ ID РєРѕРјРїСЊСЋС‚РµСЂР° (СЃРѕРѕР±С‰РёС‚Рµ РїСЂРѕРґР°РІС†Сѓ):")
     local ro = imgui.InputTextFlags and imgui.InputTextFlags.ReadOnly or 0
     imgui.InputText("##lichwid", LIC.hwidBuf, ffi.sizeof(LIC.hwidBuf), ro)
 
     if LIC_SERVER == "" and not LIC_DEV_UNLOCK then
-        imgui.TextColored(imgui.ImVec4(1.0, 0.4, 0.4, 1.0), u8"Сервер проверки ключей не настроен (LIC_SERVER)")
+        imgui.TextColored(imgui.ImVec4(1.0, 0.4, 0.4, 1.0), u8"РЎРµСЂРІРµСЂ РїСЂРѕРІРµСЂРєРё РєР»СЋС‡РµР№ РЅРµ РЅР°СЃС‚СЂРѕРµРЅ (LIC_SERVER)")
     end
 
     imgui.Dummy(imgui.ImVec2(0, 8))
     imgui.Separator()
     imgui.Dummy(imgui.ImVec2(0, 8))
-    renderSectionHeader(u8"Что входит в Про")
-    imgui.Text(u8"- ИИ пути (прыжок и обход препятствий)")
-    imgui.Text(u8"- Респавн руды: таймеры и ожидание у места")
-    imgui.Text(u8"- Карта покрытия маршрута")
-    imgui.Text(u8"- Telegram: уведомления и управление")
-    imgui.Text(u8"- Авто-пиво")
-    imgui.Text(u8"- Оптимизация и авто-маршрут")
-    imgui.Text(u8"- Отключение коллизии")
+    renderSectionHeader(u8"Р§С‚Рѕ РІС…РѕРґРёС‚ РІ РџСЂРѕ")
+    imgui.Text(u8"- РР РїСѓС‚Рё (РїСЂС‹Р¶РѕРє Рё РѕР±С…РѕРґ РїСЂРµРїСЏС‚СЃС‚РІРёР№)")
+    imgui.Text(u8"- Р РµСЃРїР°РІРЅ СЂСѓРґС‹: С‚Р°Р№РјРµСЂС‹ Рё РѕР¶РёРґР°РЅРёРµ Сѓ РјРµСЃС‚Р°")
+    imgui.Text(u8"- РљР°СЂС‚Р° РїРѕРєСЂС‹С‚РёСЏ РјР°СЂС€СЂСѓС‚Р°")
+    imgui.Text(u8"- Telegram: СѓРІРµРґРѕРјР»РµРЅРёСЏ Рё СѓРїСЂР°РІР»РµРЅРёРµ")
+    imgui.Text(u8"- РђРІС‚Рѕ-РїРёРІРѕ")
+    imgui.Text(u8"- РћРїС‚РёРјРёР·Р°С†РёСЏ Рё Р°РІС‚Рѕ-РјР°СЂС€СЂСѓС‚")
+    imgui.Text(u8"- РћС‚РєР»СЋС‡РµРЅРёРµ РєРѕР»Р»РёР·РёРё")
     imgui.Dummy(imgui.ImVec2(0, 4))
-    imgui.TextDisabled(u8"Бесплатно: маршруты, авто-добыча, приоритет руд, конфиги, цвета")
+    imgui.TextDisabled(u8"Р‘РµСЃРїР»Р°С‚РЅРѕ: РјР°СЂС€СЂСѓС‚С‹, Р°РІС‚Рѕ-РґРѕР±С‹С‡Р°, РїСЂРёРѕСЂРёС‚РµС‚ СЂСѓРґ, РєРѕРЅС„РёРіРё, С†РІРµС‚Р°")
 
     imgui.EndGroup()
 end
@@ -4486,42 +5139,42 @@ function renderNavTab()
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
 
-    renderSectionHeader(u8"ИИ пути")
+    renderSectionHeader(u8"РР РїСѓС‚Рё")
 
     licProBanner()
-    if imgui.Checkbox(u8"Включить ИИ обхода препятствий", imgui.new.bool(NAV.enabled)) then
+    if imgui.Checkbox(u8"Р’РєР»СЋС‡РёС‚СЊ РР РѕР±С…РѕРґР° РїСЂРµРїСЏС‚СЃС‚РІРёР№", imgui.new.bool(NAV.enabled)) then
         NAV.enabled = not NAV.enabled
         NAV.settingsDirty = true
     end
-    imgui.TextWrapped(u8"Если бот бежит или идёт на месте - он прыгает. Если и это не помогло - ищет обходной путь лучами по поверхности (стены, обрывы) и обходит препятствие.")
+    imgui.TextWrapped(u8"Р•СЃР»Рё Р±РѕС‚ Р±РµР¶РёС‚ РёР»Рё РёРґС‘С‚ РЅР° РјРµСЃС‚Рµ - РѕРЅ РїСЂС‹РіР°РµС‚. Р•СЃР»Рё Рё СЌС‚Рѕ РЅРµ РїРѕРјРѕРіР»Рѕ - РёС‰РµС‚ РѕР±С…РѕРґРЅРѕР№ РїСѓС‚СЊ Р»СѓС‡Р°РјРё РїРѕ РїРѕРІРµСЂС…РЅРѕСЃС‚Рё (СЃС‚РµРЅС‹, РѕР±СЂС‹РІС‹) Рё РѕР±С…РѕРґРёС‚ РїСЂРµРїСЏС‚СЃС‚РІРёРµ.")
 
     imgui.Dummy(imgui.ImVec2(0, 6))
-    imgui.Text(u8"Считать застреванием через (сек):")
+    imgui.Text(u8"РЎС‡РёС‚Р°С‚СЊ Р·Р°СЃС‚СЂРµРІР°РЅРёРµРј С‡РµСЂРµР· (СЃРµРє):")
     NAV.sStuck[0] = NAV.stuckTime
     if imgui.SliderFloat("##navstuck", NAV.sStuck, 0.5, 4.0, "%.1f") then
         NAV.stuckTime = NAV.sStuck[0]
         NAV.settingsDirty = true
     end
-    imgui.Text(u8"Сколько прыжков до поиска обхода:")
+    imgui.Text(u8"РЎРєРѕР»СЊРєРѕ РїСЂС‹Р¶РєРѕРІ РґРѕ РїРѕРёСЃРєР° РѕР±С…РѕРґР°:")
     NAV.sJumps[0] = NAV.maxJumps
     if imgui.SliderInt("##navjumps", NAV.sJumps, 0, 5) then
         NAV.maxJumps = NAV.sJumps[0]
         NAV.settingsDirty = true
     end
-    imgui.Text(u8"Макс. длина обхода (м):")
+    imgui.Text(u8"РњР°РєСЃ. РґР»РёРЅР° РѕР±С…РѕРґР° (Рј):")
     NAV.sDetour[0] = NAV.detourLen
     if imgui.SliderInt("##navdetour", NAV.sDetour, 3, 15) then
         NAV.detourLen = NAV.sDetour[0]
         NAV.settingsDirty = true
     end
-    imgui.Text(u8"Неудачных обходов до пропуска цели:")
+    imgui.Text(u8"РќРµСѓРґР°С‡РЅС‹С… РѕР±С…РѕРґРѕРІ РґРѕ РїСЂРѕРїСѓСЃРєР° С†РµР»Рё:")
     NAV.sFails[0] = NAV.maxFails
     if imgui.SliderInt("##navfails", NAV.sFails, 1, 8) then
         NAV.maxFails = NAV.sFails[0]
         NAV.settingsDirty = true
     end
-    imgui.TextDisabled(u8"Пропуск: руду прячет на 45 сек, точку маршрута перескакивает")
-    if imgui.Checkbox(u8"Рисовать линию обхода в мире", imgui.new.bool(NAV.draw)) then
+    imgui.TextDisabled(u8"РџСЂРѕРїСѓСЃРє: СЂСѓРґСѓ РїСЂСЏС‡РµС‚ РЅР° 45 СЃРµРє, С‚РѕС‡РєСѓ РјР°СЂС€СЂСѓС‚Р° РїРµСЂРµСЃРєР°РєРёРІР°РµС‚")
+    if imgui.Checkbox(u8"Р РёСЃРѕРІР°С‚СЊ Р»РёРЅРёСЋ РѕР±С…РѕРґР° РІ РјРёСЂРµ", imgui.new.bool(NAV.draw)) then
         NAV.draw = not NAV.draw
         NAV.settingsDirty = true
     end
@@ -4530,16 +5183,16 @@ function renderNavTab()
     imgui.Separator()
     imgui.Dummy(imgui.ImVec2(0, 8))
 
-    renderSectionHeader(u8"Что делает ИИ")
-    local names = {free = u8"идёт свободно", jump = u8"прыгает", detour = u8"обходит препятствие"}
-    imgui.Text(u8"Состояние: " .. (names[NAV.state] or NAV.state))
-    imgui.Text(u8"Неудачных обходов подряд: " .. NAV.fails .. u8" из " .. NAV.maxFails)
-    imgui.Text(u8"Прыжков: " .. NAV.stats.jumps .. u8", обходов: " .. NAV.stats.detours)
-    imgui.Text(u8"Освободился: " .. NAV.stats.freed .. u8", целей пропущено: " .. NAV.stats.skipped)
+    renderSectionHeader(u8"Р§С‚Рѕ РґРµР»Р°РµС‚ РР")
+    local names = {free = u8"РёРґС‘С‚ СЃРІРѕР±РѕРґРЅРѕ", jump = u8"РїСЂС‹РіР°РµС‚", detour = u8"РѕР±С…РѕРґРёС‚ РїСЂРµРїСЏС‚СЃС‚РІРёРµ"}
+    imgui.Text(u8"РЎРѕСЃС‚РѕСЏРЅРёРµ: " .. (names[NAV.state] or NAV.state))
+    imgui.Text(u8"РќРµСѓРґР°С‡РЅС‹С… РѕР±С…РѕРґРѕРІ РїРѕРґСЂСЏРґ: " .. NAV.fails .. u8" РёР· " .. NAV.maxFails)
+    imgui.Text(u8"РџСЂС‹Р¶РєРѕРІ: " .. NAV.stats.jumps .. u8", РѕР±С…РѕРґРѕРІ: " .. NAV.stats.detours)
+    imgui.Text(u8"РћСЃРІРѕР±РѕРґРёР»СЃСЏ: " .. NAV.stats.freed .. u8", С†РµР»РµР№ РїСЂРѕРїСѓС‰РµРЅРѕ: " .. NAV.stats.skipped)
     if NAV.info ~= "" then
-        imgui.TextWrapped(u8"Последнее: " .. u8(NAV.info))
+        imgui.TextWrapped(u8"РџРѕСЃР»РµРґРЅРµРµ: " .. u8(NAV.info))
     end
-    if imgui.Button(u8"Сбросить счётчики", imgui.ImVec2(160, 26)) then
+    if imgui.Button(u8"РЎР±СЂРѕСЃРёС‚СЊ СЃС‡С‘С‚С‡РёРєРё", imgui.ImVec2(160, 26)) then
         NAV.stats = {jumps = 0, detours = 0, freed = 0, skipped = 0}
         NAV.fails = 0
         NAV.info = ""
@@ -4549,134 +5202,725 @@ function renderNavTab()
     imgui.EndGroup()
 end
 
+-- GLASS_BLOCK_BEGIN
+-- ================================================================
+-- Р–РР”РљРћР• РЎРўР•РљР›Рћ + РРќРўР Рћ "РљРР РљРђ Р”РћР‘Р«Р’РђР•Рў Р РЈР”РЈ"
+-- Р’СЃС‘ Р»РµР¶РёС‚ РІ РѕРґРЅРѕР№ С‚Р°Р±Р»РёС†Рµ GLASS (С‡С‚РѕР±С‹ РЅРµ СѓРїРёСЂР°С‚СЊСЃСЏ РІ Р»РёРјРёС‚ Р»РѕРєР°Р»СЊРЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С… Lua).
+-- РРЅС‚СЂРѕ РїРѕРєР°Р·С‹РІР°РµС‚СЃСЏ РѕРґРёРЅ СЂР°Р· Р·Р° Р·Р°РїСѓСЃРє РёРіСЂС‹ РїСЂРё РїРµСЂРІРѕРј РѕС‚РєСЂС‹С‚РёРё РјРµРЅСЋ (/amineintro - РїРѕРєР°Р·Р°С‚СЊ СЃРЅРѕРІР°).
+-- Р’Рѕ РІСЂРµРјСЏ РёРЅС‚СЂРѕ РёРґС‘С‚ РїСЂРѕРІРµСЂРєР° РєР»СЋС‡Р° РџСЂРѕ; РєРёСЂРєР° Р¶РґС‘С‚ РѕС‚РІРµС‚Р° СЃРµСЂРІРµСЂР° РїРµСЂРµРґ РїСЂРµРґРїРѕСЃР»РµРґРЅРёРјРё СѓРґР°СЂР°РјРё.
+-- ================================================================
+GLASS = {
+    alpha = 1,
+    fade = 1,
+    dt = 0.016,
+    lastFrame = 0,
+    openT = 0,
+    introDone = false,
+    intro = nil,
+    tabA = {},
+    parts = {},
+    cracks = {},
+    shake = 0,
+    flash = 0,
+    ringT = -1,
+    v4 = imgui.ImVec4(0, 0, 0, 0),
+    W = 800, H = 500, R = 24,
+    CX = 400, CY = 225,          -- С†РµРЅС‚СЂ РєР°РјРЅСЏ (РІ РєРѕРѕСЂРґРёРЅР°С‚Р°С… РѕРєРЅР°)
+    HITS = 8,                    -- СЃРєРѕР»СЊРєРѕ СѓРґР°СЂРѕРІ РґРѕ РїРѕР»РЅРѕР№ Р·Р°РіСЂСѓР·РєРё
+    GATE = 5,                    -- РїРѕСЃР»Рµ СЌС‚РѕРіРѕ СѓРґР°СЂР° РєРёСЂРєР° Р¶РґС‘С‚ СЂРµР·СѓР»СЊС‚Р°С‚ РїСЂРѕРІРµСЂРєРё РєР»СЋС‡Р°
+    KEY_TIMEOUT = 8,             -- РјР°РєСЃРёРјСѓРј Р¶РґР°С‚СЊ РѕС‚РІРµС‚ СЃРµСЂРІРµСЂР°, СЃРµРє
+    L = 122, HW = 72, HD = 30,   -- СЂСѓРєРѕСЏС‚СЊ, РїРѕР»СѓС€РёСЂРёРЅР° Рё РёР·РіРёР± РіРѕР»РѕРІРєРё РєРёСЂРєРё
+    THIT = -0.55, TUP = 0.80,    -- СѓРіРѕР» РєРёСЂРєРё: РІ РјРѕРјРµРЅС‚ СѓРґР°СЂР° / РІ Р·Р°РјР°С…Рµ
+    PIVX = 185, PIVY = 100,      -- С‚РѕС‡РєР° РѕРїРѕСЂС‹ РєРёСЂРєРё РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ С†РµРЅС‚СЂР° РєР°РјРЅСЏ
+    TIPX = 60, TIPY = 34,        -- РєСѓРґР° РїРѕРїР°РґР°РµС‚ РєРѕРЅС‡РёРє РєРёСЂРєРё (РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ С†РµРЅС‚СЂР° РєР°РјРЅСЏ)
+    SC = {1.0, 0.84, 0.96, 0.80, 1.0, 0.88, 0.97, 0.82, 0.93},
+    STATUS = {
+        u8"Р—Р°РїСѓСЃРє РјРѕРґСѓР»РµР№",
+        u8"Р§С‚РµРЅРёРµ РЅР°СЃС‚СЂРѕРµРє",
+        u8"Р—Р°РіСЂСѓР·РєР° РјР°СЂС€СЂСѓС‚РѕРІ",
+        u8"РџРѕРґРіРѕС‚РѕРІРєР° РёРЅС‚РµСЂС„РµР№СЃР°",
+        u8"РџСЂРѕРІРµСЂРєР° РєР»СЋС‡Р°",
+        u8"РџСЂРѕРІРµСЂРєР° РєР»СЋС‡Р°",
+        "",
+        u8"РџСЂРёРјРµРЅРµРЅРёРµ С‚РµРјС‹",
+        u8"Р“РѕС‚РѕРІРѕ",
+    },
+}
+
+function GLASS.c(r, g, b, a)
+    local v = GLASS.v4
+    v.x = r
+    v.y = g
+    v.z = b
+    v.w = math.max(0, math.min(1, (a or 1) * GLASS.alpha))
+    return imgui.ColorConvertFloat4ToU32(v)
+end
+
+function GLASS.ease(t)
+    if t <= 0 then return 0 end
+    if t >= 1 then return 1 end
+    local u = 1 - t
+    return 1 - u * u * u
+end
+
+function GLASS.rot(px, py, x, y, th)
+    local c, s = math.cos(th), math.sin(th)
+    return px + x * c - y * s, py + x * s + y * c
+end
+
+-- ---------------- РїСЂРѕРІРµСЂРєР° РєР»СЋС‡Р° ----------------
+function GLASS.keyDone()
+    local s = GLASS.intro
+    if LIC_DEV_UNLOCK then return true end
+    if LIC_SERVER == "" or LIC.key == "" then return true end
+    if not s then return true end
+    if (LIC.doneCount or 0) > s.doneAt then return true end
+    return os.clock() - s.keyT0 > GLASS.KEY_TIMEOUT
+end
+
+-- РўРµРєСЃС‚ Рё С†РІРµС‚ СЂРµР·СѓР»СЊС‚Р°С‚Р° РїСЂРѕРІРµСЂРєРё РєР»СЋС‡Р°
+function GLASS.keyResult()
+    local s = GLASS.intro
+    if LIC_DEV_UNLOCK then return u8"Р РµР¶РёРј СЂР°Р·СЂР°Р±РѕС‚С‡РёРєР°", 'warn' end
+    if licPro() then return u8"РџРѕРґРїРёСЃРєР° Р°РєС‚РёРІРЅР°", 'ok' end
+    if LIC.key == "" then return u8"РљР»СЋС‡ РЅРµ СѓРєР°Р·Р°РЅ - Р±РµСЃРїР»Р°С‚РЅС‹Р№ СЂРµР¶РёРј", 'warn' end
+    if s and (LIC.doneCount or 0) <= s.doneAt then return u8"РќРµС‚ РѕС‚РІРµС‚Р° СЃРµСЂРІРµСЂР° - Р±РµСЃРїР»Р°С‚РЅС‹Р№ СЂРµР¶РёРј", 'warn' end
+    if LIC.msg ~= "" then return u8(LIC.msg), 'bad' end
+    return u8"РљР»СЋС‡ РЅРµ РїСЂРёРЅСЏС‚", 'bad'
+end
+
+-- ---------------- РёРЅС‚СЂРѕ: Р»РѕРіРёРєР° ----------------
+function GLASS.introStart()
+    local G = GLASS
+    G.intro = {
+        hits = 0, shown = 0, stage = 'raise', st = -0.35, th = G.THIT, tick = 0,
+        keyT0 = os.clock(), doneAt = LIC.doneCount or 0, finishT = nil, rockOn = true,
+    }
+    G.parts = {}
+    G.cracks = {}
+    G.shake = 0
+    G.flash = 0
+    G.ringT = -1
+    if LIC.key ~= "" and LIC_SERVER ~= "" and not LIC.th and not LIC_DEV_UNLOCK then
+        LIC.want = true   -- РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ РїРµСЂРµРїСЂРѕРІРµСЂСЏРµРј РєР»СЋС‡ РЅР° РІСЂРµРјСЏ Р·Р°РіСЂСѓР·РєРё
+    end
+end
+
+function GLASS.spawn(kind, x, y, vx, vy, life, sz, r, g, b)
+    local ps = GLASS.parts
+    if #ps > 170 then return end
+    ps[#ps + 1] = {
+        k = kind, x = x, y = y, vx = vx, vy = vy, life = life, ml = life, sz = sz,
+        r = r, g = g, b = b, rot = math.random() * 6.28, vr = (math.random() - 0.5) * 14,
+    }
+end
+
+function GLASS.registerHit()
+    local G = GLASS
+    local s = G.intro
+    local rnd = math.random
+    s.hits = s.hits + 1
+    G.shake = 1
+    local ix, iy = G.CX + G.TIPX, G.CY + G.TIPY
+    for i = 1, 10 do
+        local a = (rnd() - 0.5) * 3.0 - 0.5
+        local sp = 120 + rnd() * 220
+        G.spawn('spark', ix, iy, math.cos(a) * sp, math.sin(a) * sp - 40, 0.35 + rnd() * 0.3, 1.2 + rnd() * 1.2, 1, 0.85, 0.45)
+    end
+    for i = 1, 6 do
+        local a = (rnd() - 0.5) * 3.4 - 0.4
+        local sp = 70 + rnd() * 150
+        local q = 0.8 + rnd() * 0.3
+        G.spawn('chip', ix, iy, math.cos(a) * sp, math.sin(a) * sp - 90, 0.7 + rnd() * 0.4, 3 + rnd() * 3, 0.50 * q, 0.55 * q, 0.68 * q)
+    end
+    for i = 1, 3 do
+        G.spawn('dust', ix + (rnd() - 0.5) * 10, iy + (rnd() - 0.5) * 10, (rnd() - 0.2) * 40, -rnd() * 30, 0.55, 9 + rnd() * 6, 1, 1, 1)
+    end
+    if s.hits < G.HITS then
+        -- С‚СЂРµС‰РёРЅР° РѕС‚ РјРµСЃС‚Р° СѓРґР°СЂР° Рє С†РµРЅС‚СЂСѓ
+        local pts = {{G.TIPX - 5, G.TIPY - 3}}
+        local ang = math.atan2(-G.TIPY, -G.TIPX) + (rnd() - 0.5) * 1.1
+        local px, py = pts[1][1], pts[1][2]
+        for i = 1, 3 do
+            ang = ang + (rnd() - 0.5) * 0.9
+            local len = 14 + rnd() * 12
+            px = px + math.cos(ang) * len
+            py = py + math.sin(ang) * len
+            pts[#pts + 1] = {px, py}
+        end
+        G.cracks[#G.cracks + 1] = pts
+    else
+        -- С„РёРЅР°Р»СЊРЅС‹Р№ СѓРґР°СЂ: РєР°РјРµРЅСЊ СЂР°СЃСЃС‹РїР°РµС‚СЃСЏ
+        s.rockOn = false
+        s.finishT = 0
+        G.flash = 1
+        G.ringT = 0
+        local th = currentTheme
+        for i = 1, 38 do
+            local a = rnd() * 6.283
+            local sp = 110 + rnd() * 330
+            local q = rnd()
+            local r, g, b
+            if q < 0.55 then
+                r, g, b = th.r, th.g, th.b
+            elseif q < 0.75 then
+                r, g, b = 1, 1, 1
+            else
+                r, g, b = 0.5, 0.55, 0.68
+            end
+            G.spawn('shard', G.CX, G.CY, math.cos(a) * sp, math.sin(a) * sp - 140, 0.9 + rnd() * 0.6, 4 + rnd() * 8, r, g, b)
+        end
+        for i = 1, 6 do
+            G.spawn('dust', G.CX + (rnd() - 0.5) * 60, G.CY + (rnd() - 0.5) * 40, (rnd() - 0.5) * 60, -rnd() * 40, 0.8, 18 + rnd() * 10, 1, 1, 1)
+        end
+    end
+end
+
+function GLASS.introUpdate(dt)
+    local G = GLASS
+    local s = G.intro
+    if not s then return end
+    s.tick = s.tick + dt
+    s.st = s.st + dt
+    if s.stage == 'raise' then
+        if s.st < 0 then
+            s.th = G.THIT
+        else
+            local d = 0.30
+            s.th = G.THIT + (G.TUP - G.THIT) * G.ease(s.st / d)
+            if s.st >= d then
+                s.th = G.TUP
+                s.st = 0
+                if s.hits == G.GATE and not G.keyDone() then
+                    s.stage = 'hold'
+                else
+                    s.stage = 'strike'
+                end
+            end
+        end
+    elseif s.stage == 'hold' then
+        s.th = G.TUP + 0.05 * math.sin(s.tick * 7)
+        if G.keyDone() then
+            s.stage = 'strike'
+            s.st = 0
+        end
+    elseif s.stage == 'strike' then
+        local d = 0.09
+        local k = math.min(1, s.st / d)
+        s.th = G.TUP + (G.THIT - G.TUP) * k * k
+        if s.st >= d then
+            s.th = G.THIT
+            s.st = 0
+            G.registerHit()
+            if s.hits >= G.HITS then s.stage = 'finish' else s.stage = 'recover' end
+        end
+    elseif s.stage == 'recover' then
+        local d = 0.12
+        s.th = G.THIT + 0.18 * math.sin(math.pi * math.min(1, s.st / d))
+        if s.st >= d then
+            s.th = G.THIT
+            s.st = 0
+            s.stage = 'raise'
+        end
+    elseif s.stage == 'finish' then
+        s.th = G.THIT
+        s.finishT = (s.finishT or 0) + dt
+    end
+
+    -- РїР»Р°РІРЅС‹Р№ РїСЂРѕРіСЂРµСЃСЃ (РїСЂРёРІСЏР·Р°РЅ Рє СѓРґР°СЂР°Рј)
+    local target = s.hits / G.HITS
+    s.shown = s.shown + (target - s.shown) * math.min(1, dt * 7)
+
+    -- С‡Р°СЃС‚РёС†С‹
+    local ps = G.parts
+    for i = #ps, 1, -1 do
+        local q = ps[i]
+        q.life = q.life - dt
+        if q.life <= 0 then
+            table.remove(ps, i)
+        else
+            local g = 0
+            if q.k == 'spark' then g = 760 elseif q.k == 'chip' then g = 900 elseif q.k == 'shard' then g = 520 end
+            q.vy = q.vy + g * dt
+            q.x = q.x + q.vx * dt
+            q.y = q.y + q.vy * dt
+            q.rot = q.rot + q.vr * dt
+        end
+    end
+    G.shake = math.max(0, G.shake - dt * 5)
+    G.flash = math.max(0, G.flash - dt * 1.8)
+    if G.ringT >= 0 then
+        G.ringT = G.ringT + dt
+        if G.ringT > 0.8 then G.ringT = -1 end
+    end
+
+    if s.stage == 'finish' and (s.finishT or 0) >= 1.1 then
+        G.introDone = true
+        G.intro = nil
+        G.parts = {}
+    end
+end
+
+-- ---------------- РѕС‚СЂРёСЃРѕРІРєР°: С„РѕРЅ-СЃС‚РµРєР»Рѕ ----------------
+-- РіРѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅР°СЏ РїРѕР»РѕСЃРєР° СЃ РјСЏРіРєРёРј Р·Р°С‚СѓС…Р°РЅРёРµРј Рє РєСЂР°СЏРј (РЅРµС‚ РІРµСЂС‚РёРєР°Р»СЊРЅС‹С… "СЃСЂРµР·РѕРІ")
+function GLASS.hband(dl, x1, x2, y1, y2, a)
+    local V2 = imgui.ImVec2
+    local c = GLASS.c
+    local m = (x1 + x2) / 2
+    dl:AddRectFilledMultiColor(V2(x1, y1), V2(m, y2), c(1, 1, 1, 0), c(1, 1, 1, a), c(1, 1, 1, a), c(1, 1, 1, 0))
+    dl:AddRectFilledMultiColor(V2(m, y1), V2(x2, y2), c(1, 1, 1, a), c(1, 1, 1, 0), c(1, 1, 1, 0), c(1, 1, 1, a))
+end
+
+function GLASS.drawBackground(dl, p)
+    local G = GLASS
+    local V2 = imgui.ImVec2
+    local c = G.c
+    local W, H, R = G.W, G.H, G.R
+    local x2, y2 = p.x + W, p.y + H
+    local t = os.clock()
+    local th = currentTheme
+
+    -- С‚С‘РјРЅР°СЏ "РґС‹РјС‡Р°С‚Р°СЏ" РѕСЃРЅРѕРІР°
+    dl:AddRectFilled(p, V2(x2, y2), c(0.05, 0.06, 0.11, 0.66), R)
+
+    -- С†РІРµС‚РЅС‹Рµ РїСЏС‚РЅР° (РјРЅРѕРіРѕ С‚РѕРЅРєРёС… РєРѕР»РµС† - Р±РµР· Р·Р°РјРµС‚РЅС‹С… СЃС‚СѓРїРµРЅРµРє)
+    dl:PushClipRect(p, V2(x2, y2), true)
+    local blobs = {
+        {170 + math.sin(t * 0.35) * 28, 140 + math.cos(t * 0.30) * 22, 150, th.r, th.g, th.b, 0.30},
+        {640 + math.cos(t * 0.28) * 30, 370 + math.sin(t * 0.33) * 24, 170, 0.20, 0.45, 1.00, 0.26},
+        {620 + math.sin(t * 0.40) * 22, 110 + math.cos(t * 0.25) * 20, 120, 1.00, 0.35, 0.65, 0.16},
+        {190 + math.cos(t * 0.30) * 20, 400 + math.sin(t * 0.37) * 18, 120, 0.25, 0.85, 0.95, 0.14},
+    }
+    for _, b in ipairs(blobs) do
+        local N = 24
+        for i = 0, N - 1 do
+            local k = 1 - i / N
+            dl:AddCircleFilled(V2(p.x + b[1], p.y + b[2]), b[3] * k, c(b[4], b[5], b[6], b[7] * 0.07), 48)
+        end
+    end
+    dl:PopClipRect()
+
+    -- РІРµСЂС…РЅРёР№ Р±Р»РёРє: СЃС‚РѕРїРєР° РїРѕР»РѕСЃРѕРє, Р·Р°С‚СѓС…Р°СЋС‰РёС… РІРЅРёР· Рё Рє РєСЂР°СЏРј
+    for i = 0, 15 do
+        local a = 0.085 * (1 - i / 16) ^ 1.5
+        G.hband(dl, p.x + R * 0.8, x2 - R * 0.8, p.y + 2 + i * 5, p.y + 7 + i * 5, a)
+    end
+
+    -- РєСЂРѕРјРєР°: РІРЅРµС€РЅСЏСЏ + С‚РѕРЅРєР°СЏ РІРЅСѓС‚СЂРµРЅРЅСЏСЏ
+    dl:AddRect(p, V2(x2, y2), c(1, 1, 1, 0.20), R, 15, 1.3)
+    dl:AddRect(V2(p.x + 2, p.y + 2), V2(x2 - 2, y2 - 2), c(1, 1, 1, 0.05), R - 2, 15, 1)
+
+    -- Р·РµСЂРєР°Р»СЊРЅР°СЏ РїРѕР»РѕСЃРєР° РїРѕ РІРµСЂС…РЅРµР№ РєСЂРѕРјРєРµ
+    G.hband(dl, p.x + R, x2 - R, p.y + 1, p.y + 2.5, 0.6)
+end
+
+-- ---------------- РѕС‚СЂРёСЃРѕРІРєР°: РёРЅС‚СЂРѕ ----------------
+-- Р—Р°РіРѕС‚РѕРІРєР° РјРµРЅСЋ РїСЂРѕСЃС‚СѓРїР°РµС‚ РїРѕ РјРµСЂРµ РґРѕР±С‹С‡Рё (РїР»Р°С€РєРё РІРєР»Р°РґРѕРє РїРѕСЏРІР»СЏСЋС‚СЃСЏ СЃ РєР°Р¶РґС‹Рј СѓРґР°СЂРѕРј)
+function GLASS.drawSkeleton(dl, p, shown, mul)
+    local G = GLASS
+    local V2 = imgui.ImVec2
+    local c = G.c
+    local th = currentTheme
+    dl:AddRectFilled(V2(p.x + 10, p.y + 10), V2(p.x + 190, p.y + 490), c(1, 1, 1, 0.035 * mul), 16)
+    dl:AddRect(V2(p.x + 10, p.y + 10), V2(p.x + 190, p.y + 490), c(1, 1, 1, 0.08 * mul), 16, 15, 1)
+    dl:AddRectFilled(V2(p.x + 198, p.y + 10), V2(p.x + 790, p.y + 490), c(1, 1, 1, 0.025 * mul), 16)
+    dl:AddRect(V2(p.x + 198, p.y + 10), V2(p.x + 790, p.y + 490), c(1, 1, 1, 0.06 * mul), 16, 15, 1)
+    local steps = shown * 12
+    if steps > 0.2 then
+        dl:AddRectFilled(V2(p.x + 55, p.y + 30), V2(p.x + 145, p.y + 42), c(th.r, th.g, th.b, 0.22 * mul), 6)
+    end
+    for i = 1, 8 do
+        local k = math.max(0, math.min(1, steps - (i - 1)))
+        if k > 0 then
+            local y = p.y + 70 + (i - 1) * 50
+            dl:AddRectFilled(V2(p.x + 18, y), V2(p.x + 182, y + 32), c(1, 1, 1, 0.07 * k * mul), 12)
+            dl:AddRectFilled(V2(p.x + 34, y + 12), V2(p.x + 34 + 60 + (i % 3) * 14, y + 20), c(1, 1, 1, 0.12 * k * mul), 4)
+        end
+    end
+end
+
+function GLASS.drawRock(dl, p, now, prog)
+    local G = GLASS
+    local V2 = imgui.ImVec2
+    local c = G.c
+    local th = currentTheme
+    local sh = G.shake
+    local X = p.x + G.CX + (math.random() - 0.5) * 6 * sh
+    local Y = p.y + G.CY + (math.random() - 0.5) * 6 * sh
+
+    -- РѕСЂРµРѕР» СЂСѓРґС‹: СЂР°СЃС‚С‘С‚ СЃ РїСЂРѕРіСЂРµСЃСЃРѕРј
+    local pulse = 0.85 + 0.15 * math.sin(now * 3)
+    for i = 0, 15 do
+        dl:AddCircleFilled(V2(X, Y), (95 + 75 * prog) * (1 - i / 16), c(th.r, th.g, th.b, (0.022 + 0.032 * prog) * pulse), 48)
+    end
+
+    -- РіСЂР°РЅРё: РєР°Р¶РґР°СЏ С‡СѓС‚СЊ Р·Р°С…РѕРґРёС‚ РЅР° СЃРѕСЃРµРґРЅСЋСЋ, С‡С‚РѕР±С‹ РЅРµ Р±С‹Р»Рѕ СЃРІРµС‚Р»С‹С… С€РІРѕРІ
+    local pts = {}
+    local step = 2 * math.pi / 9
+    for i = 0, 8 do
+        local a = -math.pi / 2 + i * step
+        local r = 78 * G.SC[i + 1]
+        pts[i + 1] = {X + math.cos(a) * r * 1.05, Y + math.sin(a) * r * 0.82}
+    end
+    local ccx, ccy = X - 3, Y - 6
+    for i = 1, 9 do
+        local j = (i % 9) + 1
+        local a = -math.pi / 2 + (i - 0.5) * step
+        local lit = math.cos(a) * -0.55 + math.sin(a) * -0.83
+        local shd = math.max(0.45, math.min(1.2, 0.80 + 0.42 * lit))
+        local r, g, b = math.min(1, 0.50 * shd), math.min(1, 0.55 * shd), math.min(1, 0.68 * shd)
+        local mx = (ccx + pts[i][1] + pts[j][1]) / 3
+        local my = (ccy + pts[i][2] + pts[j][2]) / 3
+        local function ex(x, y) return V2(mx + (x - mx) * 1.035, my + (y - my) * 1.035) end
+        dl:AddTriangleFilled(ex(ccx, ccy), ex(pts[i][1], pts[i][2]), ex(pts[j][1], pts[j][2]), c(r, g, b, 1))
+    end
+    -- Р°РєРєСѓСЂР°С‚РЅС‹Р№ РєРѕРЅС‚СѓСЂ С‚РѕР»СЊРєРѕ РїРѕ СЃРёР»СѓСЌС‚Сѓ
+    for i = 1, 9 do
+        local j = (i % 9) + 1
+        dl:AddLine(V2(pts[i][1], pts[i][2]), V2(pts[j][1], pts[j][2]), c(1, 1, 1, 0.22), 1.2)
+    end
+
+    -- РєСЂРёСЃС‚Р°Р»Р»С‹ СЂСѓРґС‹
+    local cr = {{-20, -14, 22, 10}, {14, -6, 30, 12}, {-2, 16, 18, 8}, {26, 20, 14, 6}}
+    local gl = 0.55 + 0.45 * prog + 0.08 * math.sin(now * 4)
+    for _, q in ipairs(cr) do
+        local qx, qy, h, w = X + q[1], Y + q[2], q[3], q[4]
+        dl:AddCircleFilled(V2(qx, qy), h * 0.95, c(th.r, th.g, th.b, 0.10 * gl), 16)
+        dl:AddQuadFilled(V2(qx, qy - h), V2(qx + w, qy), V2(qx, qy + h * 0.55), V2(qx - w, qy), c(th.r, th.g, th.b, 0.70 + 0.28 * gl))
+        dl:AddTriangleFilled(V2(qx, qy - h), V2(qx - w, qy), V2(qx, qy), c(1, 1, 1, 0.38))
+    end
+
+    -- С‚СЂРµС‰РёРЅС‹: РѕРґРЅР° С‡РёСЃС‚Р°СЏ Р»РёРЅРёСЏ
+    for _, cp in ipairs(G.cracks) do
+        for i = 1, #cp - 1 do
+            dl:AddLine(V2(X + cp[i][1], Y + cp[i][2]), V2(X + cp[i + 1][1], Y + cp[i + 1][2]), c(0.03, 0.04, 0.08, 0.8), 1.6)
+        end
+    end
+end
+
+function GLASS.drawPick(dl, p, th)
+    local G = GLASS
+    local V2 = imgui.ImVec2
+    local c = G.c
+    local px, py = p.x + G.CX + G.PIVX, p.y + G.CY + G.PIVY
+    local topY = -(G.L + G.HD)
+    local function P(x, y)
+        local a, b = G.rot(px, py, x, y, th)
+        return V2(a, b)
+    end
+
+    -- СЂСѓРєРѕСЏС‚СЊ: СЂРѕРІРЅС‹Р№ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє СЃ Р±Р»РёРєРѕРј Рё С‚РµРЅСЊСЋ РїРѕ Р±РѕРєР°Рј
+    dl:AddQuadFilled(P(-4.5, 0), P(4.5, 0), P(4.5, topY + 2), P(-4.5, topY + 2), c(0.60, 0.40, 0.24, 1))
+    dl:AddQuadFilled(P(-4.5, 0), P(-1.5, 0), P(-1.5, topY + 2), P(-4.5, topY + 2), c(0.86, 0.66, 0.44, 0.75))
+    dl:AddQuadFilled(P(2.5, 0), P(4.5, 0), P(4.5, topY + 2), P(2.5, topY + 2), c(0.28, 0.18, 0.10, 0.45))
+    dl:AddCircleFilled(P(0, 2), 6, c(0.42, 0.28, 0.17, 1), 16)
+
+    -- РіРѕР»РѕРІРєР°: РёР·РѕРіРЅСѓС‚Р°СЏ РїРѕР»РѕСЃР° РїРµСЂРµРјРµРЅРЅРѕР№ С‚РѕР»С‰РёРЅС‹ РёР· РїРµСЂРµРєСЂС‹РІР°СЋС‰РёС…СЃСЏ С‡РµС‚С‹СЂС‘С…СѓРіРѕР»СЊРЅРёРєРѕРІ
+    local N = 22
+    local function edge(t, sgn, grow)
+        local tt = math.max(-1, math.min(1, t))
+        local lx, ly = tt * G.HW, -G.L - G.HD + G.HD * tt * tt
+        local dx, dy = G.HW, 2 * G.HD * tt
+        local len = math.sqrt(dx * dx + dy * dy)
+        local w = math.max(2.2, 6.4 - 4.0 * math.abs(tt)) + grow
+        return P(lx + sgn * dy / len * w, ly - sgn * dx / len * w)
+    end
+    local function layer(grow, r, g, b)
+        for k = 0, N - 1 do
+            local t0 = -1 + 2 * k / N - 0.012
+            local t1 = -1 + 2 * (k + 1) / N + 0.012
+            dl:AddQuadFilled(edge(t0, 1, grow), edge(t1, 1, grow), edge(t1, -1, grow), edge(t0, -1, grow), c(r, g, b, 1))
+        end
+        for _, tt in ipairs({-1, 1}) do
+            local lx, ly = tt * G.HW, -G.L - G.HD + G.HD
+            dl:AddCircleFilled(P(lx, ly), math.max(2.2, 6.4 - 4.0) + grow, c(r, g, b, 1), 14)
+        end
+    end
+    layer(1.6, 0.22, 0.27, 0.38)
+    layer(0, 0.80, 0.85, 0.94)
+    -- Р±Р»РёРє РїРѕ РІРµСЂС…РЅРµР№ РєСЂРѕРјРєРµ
+    for k = 0, N - 1 do
+        local t0 = -1 + 2 * k / N
+        local t1 = -1 + 2 * (k + 1) / N
+        dl:AddLine(edge(t0, 1, -1.8), edge(t1, 1, -1.8), c(1, 1, 1, 0.5), 1.4)
+    end
+
+    -- РєСЂРµРїР»РµРЅРёРµ РіРѕР»РѕРІРєРё Рє СЂСѓРєРѕСЏС‚Рё
+    dl:AddCircleFilled(P(0, -G.L - G.HD), 7, c(0.30, 0.22, 0.20, 1), 16)
+    dl:AddCircleFilled(P(-1, -G.L - G.HD - 1), 3, c(0.75, 0.62, 0.5, 0.9), 10)
+end
+
+function GLASS.drawParts(dl, p)
+    local G = GLASS
+    local V2 = imgui.ImVec2
+    local c = G.c
+    for _, q in ipairs(G.parts) do
+        local a = math.max(0, q.life / q.ml)
+        local x, y = p.x + q.x, p.y + q.y
+        if q.k == 'spark' then
+            dl:AddLine(V2(x, y), V2(x - q.vx * 0.035, y - q.vy * 0.035), c(1, 0.80, 0.40, a), 2)
+            dl:AddCircleFilled(V2(x, y), q.sz, c(1, 0.95, 0.70, a), 8)
+        elseif q.k == 'dust' then
+            dl:AddCircleFilled(V2(x, y), q.sz * (1.7 - a), c(0.85, 0.9, 1, a * 0.16), 14)
+        else
+            local ax, ay = G.rot(x, y, 0, -q.sz, q.rot)
+            local bx, by = G.rot(x, y, q.sz * 0.8, q.sz * 0.6, q.rot)
+            local cx2, cy2 = G.rot(x, y, -q.sz * 0.8, q.sz * 0.6, q.rot)
+            dl:AddTriangleFilled(V2(ax, ay), V2(bx, by), V2(cx2, cy2), c(q.r, q.g, q.b, math.min(1, a * 1.6)))
+        end
+    end
+end
+
+function GLASS.drawIntro(dl, p, now, reveal)
+    local G = GLASS
+    local s = G.intro
+    local V2 = imgui.ImVec2
+    local c = G.c
+    local th = currentTheme
+    local W = G.W
+    local baseA = G.fade
+    local sceneA = 1
+    if s.stage == 'finish' then
+        sceneA = 1 - G.ease((s.finishT or 0) / 0.8)
+    end
+
+    -- Р·Р°РіРѕС‚РѕРІРєР° РјРµРЅСЋ
+    G.alpha = baseA
+    G.drawSkeleton(dl, p, s.shown, 1 - reveal)
+
+    -- СЃС†РµРЅР°
+    G.alpha = baseA * sceneA
+    if s.rockOn then G.drawRock(dl, p, now, s.shown) end
+    G.drawPick(dl, p, s.th)
+    G.drawParts(dl, p)
+
+    -- СѓРґР°СЂРЅР°СЏ РІРѕР»РЅР° Рё РІСЃРїС‹С€РєР° РїСЂРё С„РёРЅР°Р»СЊРЅРѕРј СѓРґР°СЂРµ
+    if G.ringT >= 0 then
+        local k = G.ringT / 0.8
+        dl:AddCircle(V2(p.x + G.CX, p.y + G.CY), 30 + 230 * G.ease(k), c(th.r, th.g, th.b, 0.7 * (1 - k)), 48, 3)
+        dl:AddCircle(V2(p.x + G.CX, p.y + G.CY), 20 + 170 * G.ease(k), c(1, 1, 1, 0.5 * (1 - k)), 48, 1.5)
+    end
+    if G.flash > 0.01 then
+        G.alpha = baseA
+        dl:AddRectFilled(p, V2(p.x + W, p.y + G.H), c(1, 1, 1, 0.30 * G.flash), G.R)
+        G.alpha = baseA * sceneA
+    end
+
+    -- Р·Р°РіРѕР»РѕРІРѕРє
+    imgui.PushFont(titleFont)
+    local ts = imgui.CalcTextSize("RABOTYAGA MAIN")
+    imgui.SetCursorScreenPos(V2(p.x + (W - ts.x) / 2, p.y + 34))
+    imgui.TextColored(imgui.ImVec4(th.r, th.g, th.b, sceneA), "RABOTYAGA MAIN")
+    imgui.PopFont()
+
+    -- РїРѕР»РѕСЃР° РїСЂРѕРіСЂРµСЃСЃР° (РєР°РїСЃСѓР»Р°-СЃС‚РµРєР»Рѕ)
+    local bw, bh = 380, 10
+    local bx, by = p.x + (W - bw) / 2, p.y + 408
+    dl:AddRectFilled(V2(bx, by), V2(bx + bw, by + bh), c(1, 1, 1, 0.10), 5)
+    local fw = bw * s.shown
+    if fw > 1 then
+        local fillW = math.max(fw, 10)
+        dl:AddRectFilled(V2(bx, by), V2(bx + fillW, by + bh), c(th.r, th.g, th.b, 0.95), 5)
+        dl:AddRectFilled(V2(bx + 2, by + 1), V2(bx + fillW - 2, by + 4), c(1, 1, 1, 0.35), 3)
+        for i = 1, 5 do
+            dl:AddCircleFilled(V2(bx + fillW, by + bh / 2), 4 + i * 3, c(th.r, th.g, th.b, 0.06), 14)
+        end
+    end
+    dl:AddRect(V2(bx, by), V2(bx + bw, by + bh), c(1, 1, 1, 0.22), 5, 15, 1)
+
+    -- СЃС‚Р°С‚СѓСЃ СЃР»РµРІР°, РїСЂРѕС†РµРЅС‚С‹ СЃРїСЂР°РІР°
+    local txt, col = G.STATUS[math.min(s.hits + 1, #G.STATUS)], 'norm'
+    if s.hits == 6 then txt, col = G.keyResult() end
+    local dots = ""
+    if s.hits >= 4 and s.hits <= 5 then dots = string.rep(".", math.floor(now * 3) % 4) end
+    local cr, cg, cb = 0.88, 0.90, 0.96
+    if col == 'ok' then cr, cg, cb = 0.40, 1.00, 0.55
+    elseif col == 'warn' then cr, cg, cb = 1.00, 0.75, 0.35
+    elseif col == 'bad' then cr, cg, cb = 1.00, 0.45, 0.45 end
+    imgui.SetCursorScreenPos(V2(bx, by - 26))
+    imgui.TextColored(imgui.ImVec4(cr, cg, cb, sceneA), txt .. dots)
+    local pct = string.format("%d%%", math.floor(s.shown * 100 + 0.5))
+    local ps = imgui.CalcTextSize(pct)
+    imgui.SetCursorScreenPos(V2(bx + bw - ps.x, by - 26))
+    imgui.TextColored(imgui.ImVec4(1, 1, 1, 0.85 * sceneA), pct)
+end
+
+-- ---------------- РІРєР»Р°РґРєР°: РїР»Р°РІРЅР°СЏ РїРѕРґСЃРІРµС‚РєР° Р°РєС‚РёРІРЅРѕР№ ----------------
+function GLASS.drawTabPill(wdl, p, s, a)
+    local G = GLASS
+    local V2 = imgui.ImVec2
+    local th = currentTheme
+    if a < 0.01 then return end
+    wdl:AddRectFilled(p, V2(p.x + s.x, p.y + s.y), G.c(th.r, th.g, th.b, 0.26 * a), 12)
+    G.hband(wdl, p.x + 10, p.x + s.x - 10, p.y + 1, p.y + 2.5, 0.30 * a)
+    wdl:AddRect(p, V2(p.x + s.x, p.y + s.y), G.c(1, 1, 1, 0.22 * a), 12, 15, 1.2)
+    wdl:AddCircleFilled(V2(p.x + 11, p.y + s.y / 2), 3, G.c(th.r, th.g, th.b, a), 12)
+end
+-- GLASS_BLOCK_END
+
 local newFrame = imgui.OnFrame(
     function() return WinState[0] end,
     function(player)
+        local G = GLASS
         local screenW, screenH = getScreenResolution()
         imgui.SetNextWindowPos(imgui.ImVec2(screenW / 2, screenH / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(800, 500), imgui.Cond.FirstUseEver)
-        
-        imgui.Begin("##main", WinState, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoTitleBar)
-        
-        local sidebarWidth = 180
-        local contentWidth = 800 - sidebarWidth - 15
-        
-        imgui.BeginChild("##sidebar", imgui.ImVec2(sidebarWidth, 500 - 20), true, imgui.WindowFlags.NoScrollWithMouse)
-        smoothScrollBegin("side")
-        
-        imgui.PushFont(titleFont)
-        local titleSize = imgui.CalcTextSize("RABOTYAGA MAIN")
-        imgui.SetCursorPos(imgui.ImVec2((sidebarWidth - titleSize.x) / 2, 25))
-        imgui.TextColored(accent(1.0), "RABOTYAGA MAIN")
-        imgui.PopFont()
-        
-        imgui.Dummy(imgui.ImVec2(0, 15))
-        
-        local tabs = {
-            {id = 1, label = u8"Основное"},
-            {id = 2, label = u8"Приоритет"},
-            {id = 3, label = u8"Конфиги"}, 
-            {id = 4, label = u8"Коллизия"},
-            {id = 5, label = u8"Цвета"},
-            {id = 6, label = u8"Маршрут"},
-            {id = 7, label = u8"Пиво"},
-            {id = 8, label = u8"Респавн"},
-            {id = 9, label = u8"Карта"},
-            {id = 10, label = u8"Telegram"},
-            {id = 11, label = u8"ИИ пути"},
-            {id = 12, label = u8"Подписка"}
-        }
-        
-        for _, tab in ipairs(tabs) do
-            local isActive = (selectedTab == tab.id)
-            
-            imgui.SetCursorPosX(8)
-            
-            local buttonColor = imgui.ImVec4(0.08, 0.08, 0.08, 0.85)
-            if isActive then
-                buttonColor = accent(0.35)
-            end
-            
-            imgui.PushStyleColor(imgui.Col.Button, buttonColor)
-            imgui.PushStyleColor(imgui.Col.ButtonHovered, buttonColor)
-            imgui.PushStyleColor(imgui.Col.ButtonActive, buttonColor)
-            
-            local locked = licTabLocked(tab.id)
-            if imgui.Button("##tab" .. tab.id, imgui.ImVec2(sidebarWidth - 16, 32)) then
-                selectedTab = locked and 12 or tab.id
-            end
-            
-            local p = imgui.GetItemRectMin()
-            local s = imgui.GetItemRectSize()
-            local wdl = imgui.GetWindowDrawList()
-            
-            if isActive then
-                wdl:AddRectFilled(
-                    imgui.ImVec2(p.x, p.y + s.y - 3),
-                    imgui.ImVec2(p.x + s.x, p.y + s.y),
-                    imgui.ColorConvertFloat4ToU32(accent(1.0))
-                )
-            end
-            
-            imgui.SetCursorScreenPos(imgui.ImVec2(p.x + 12, p.y + (s.y - imgui.GetTextLineHeight()) / 2 - 1))
-            
-            local textColor = isActive and imgui.ImVec4(1.0, 1.0, 1.0, 1.0) or imgui.ImVec4(0.65, 0.65, 0.65, 1.0)
-            if locked then textColor = imgui.ImVec4(0.5, 0.45, 0.55, 1.0) end
-            imgui.TextColored(textColor, tab.label)
-            if locked then licDrawLock(wdl, p, s) end
-            
-            imgui.PopStyleColor(3)
-            imgui.Dummy(imgui.ImVec2(0, 2))
+
+        -- РїР»Р°РІРЅРѕРµ РїРѕСЏРІР»РµРЅРёРµ РїСЂРё РєР°Р¶РґРѕРј РѕС‚РєСЂС‹С‚РёРё
+        local now = os.clock()
+        if now - G.lastFrame > 0.25 then
+            G.openT = now
+            G.dt = 0.016
+        else
+            G.dt = math.min(0.05, now - G.lastFrame)
         end
-        
-        imgui.EndChild()
-        imgui.SameLine()
-        
-        imgui.BeginChild("##content", imgui.ImVec2(contentWidth, 500 - 20), true, imgui.WindowFlags.NoScrollWithMouse)
-        smoothScrollBegin("content")
-        
-        imgui.PushFont(mainFont)
-        
-        if licTabLocked(selectedTab) then selectedTab = 12 end
-        if selectedTab == 1 then
-            renderMainTab()
-        elseif selectedTab == 2 then
-            renderPriorityTab()
-        elseif selectedTab == 3 then
-            renderConfigTab()
-        elseif selectedTab == 4 then
-            renderCollisionTab()
-        elseif selectedTab == 5 then
-            renderMiscTab()
-        elseif selectedTab == 6 then
-            renderRouteTab()
-        elseif selectedTab == 7 then
-            renderBeerTab()
-        elseif selectedTab == 8 then
-            renderRespawnTab()
-        elseif selectedTab == 9 then
-            renderMapTab()
-        elseif selectedTab == 10 then
-            renderTelegramTab()
-        elseif selectedTab == 11 then
-            renderNavTab()
-        elseif selectedTab == 12 then
-            renderLicTab()
+        G.lastFrame = now
+        G.fade = G.ease((now - G.openT) / 0.30)
+
+        -- РїРµСЂРІРѕРµ РѕС‚РєСЂС‹С‚РёРµ Р·Р° Р·Р°РїСѓСЃРє РёРіСЂС‹: Р·Р°РїСѓСЃРєР°РµРј РёРЅС‚СЂРѕ СЃ РїСЂРѕРІРµСЂРєРѕР№ РєР»СЋС‡Р°
+        if not G.introDone and not G.intro then G.introStart() end
+
+        imgui.GetStyle().Alpha = math.max(0.01, G.fade)
+        imgui.Begin("##main", WinState, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoBackground + imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse)
+
+        local wp = imgui.GetWindowPos()
+        local wdl0 = imgui.GetWindowDrawList()
+        G.alpha = G.fade
+        G.drawBackground(wdl0, wp)
+
+        local reveal = 1
+        if G.intro then
+            G.introUpdate(G.dt)
         end
-        
-        imgui.PopFont()
-        imgui.EndChild()
+        if G.intro then
+            local it = G.intro
+            reveal = (it.stage == 'finish') and G.ease(((it.finishT or 0) - 0.25) / 0.75) or 0
+            G.drawIntro(wdl0, wp, now, reveal)
+        end
+
+        if reveal > 0.01 then
+            G.alpha = G.fade * reveal
+            imgui.GetStyle().Alpha = math.max(0.01, G.fade * reveal)
+
+            local sidebarWidth = 180
+            local contentWidth = 800 - sidebarWidth - 15
+
+            imgui.SetCursorPos(imgui.ImVec2(10, 10))
+            imgui.BeginChild("##sidebar", imgui.ImVec2(sidebarWidth, 500 - 20), true, imgui.WindowFlags.NoScrollWithMouse)
+            smoothScrollBegin("side")
+
+            imgui.PushFont(titleFont)
+            local titleSize = imgui.CalcTextSize("RABOTYAGA MAIN")
+            imgui.SetCursorPos(imgui.ImVec2((sidebarWidth - titleSize.x) / 2, 25))
+            imgui.TextColored(accent(1.0), "RABOTYAGA MAIN")
+            imgui.PopFont()
+
+            imgui.Dummy(imgui.ImVec2(0, 15))
+
+            local tabs = {
+                {id = 1, label = u8"РћСЃРЅРѕРІРЅРѕРµ"},
+                {id = 2, label = u8"РџСЂРёРѕСЂРёС‚РµС‚"},
+                {id = 3, label = u8"РљРѕРЅС„РёРіРё"},
+                {id = 4, label = u8"РљРѕР»Р»РёР·РёСЏ"},
+                {id = 5, label = u8"Р¦РІРµС‚Р°"},
+                {id = 6, label = u8"РњР°СЂС€СЂСѓС‚"},
+                {id = 7, label = u8"РџРёРІРѕ"},
+                {id = 8, label = u8"Extra"},
+                {id = 9, label = u8"РљР°СЂС‚Р°"},
+                {id = 10, label = u8"Telegram"},
+                {id = 11, label = u8"РР РїСѓС‚Рё"},
+                {id = 12, label = u8"РџРѕРґРїРёСЃРєР°"}
+            }
+
+            for _, tab in ipairs(tabs) do
+                local isActive = (selectedTab == tab.id)
+                local ta = G.tabA[tab.id] or 0
+                ta = ta + ((isActive and 1 or 0) - ta) * math.min(1, G.dt * 12)
+                G.tabA[tab.id] = ta
+
+                imgui.SetCursorPosX(8)
+
+                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(1, 1, 1, 0))
+                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(1, 1, 1, 0.08))
+                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(1, 1, 1, 0.14))
+                imgui.GetStyle().FrameBorderSize = 0
+
+                local locked = licTabLocked(tab.id)
+                if imgui.Button("##tab" .. tab.id, imgui.ImVec2(sidebarWidth - 16, 32)) then
+                    selectedTab = locked and 12 or tab.id
+                end
+
+                imgui.GetStyle().FrameBorderSize = 1
+
+                local p = imgui.GetItemRectMin()
+                local s = imgui.GetItemRectSize()
+                local wdl = imgui.GetWindowDrawList()
+
+                G.drawTabPill(wdl, p, s, ta)
+
+                imgui.SetCursorScreenPos(imgui.ImVec2(p.x + 14 + 4 * ta, p.y + (s.y - imgui.GetTextLineHeight()) / 2 - 1))
+
+                local textColor = imgui.ImVec4(0.68, 0.70, 0.78, 1.0)
+                if isActive then textColor = imgui.ImVec4(1.0, 1.0, 1.0, 1.0) end
+                if locked then textColor = imgui.ImVec4(0.52, 0.47, 0.58, 1.0) end
+                imgui.TextColored(textColor, tab.label)
+                if locked then licDrawLock(wdl, p, s) end
+
+                imgui.PopStyleColor(3)
+                imgui.Dummy(imgui.ImVec2(0, 2))
+            end
+
+            imgui.EndChild()
+            imgui.SameLine()
+
+            imgui.BeginChild("##content", imgui.ImVec2(contentWidth, 500 - 20), true, imgui.WindowFlags.NoScrollWithMouse)
+            smoothScrollBegin("content")
+
+            imgui.PushFont(mainFont)
+
+            if licTabLocked(selectedTab) then selectedTab = 12 end
+            if selectedTab == 1 then
+                renderMainTab()
+            elseif selectedTab == 2 then
+                renderPriorityTab()
+            elseif selectedTab == 3 then
+                renderConfigTab()
+            elseif selectedTab == 4 then
+                renderCollisionTab()
+            elseif selectedTab == 5 then
+                renderMiscTab()
+            elseif selectedTab == 6 then
+                renderRouteTab()
+            elseif selectedTab == 7 then
+                renderBeerTab()
+            elseif selectedTab == 8 then
+                renderExtraTab()
+            elseif selectedTab == 9 then
+                renderMapTab()
+            elseif selectedTab == 10 then
+                renderTelegramTab()
+            elseif selectedTab == 11 then
+                renderNavTab()
+            elseif selectedTab == 12 then
+                renderLicTab()
+            end
+
+            imgui.PopFont()
+            imgui.EndChild()
+        end
+
         imgui.End()
+        imgui.GetStyle().Alpha = 1
     end
 )
 
 imgui.OnFrame(function() return WinStats[0] end, function(player)
     imgui.SetNextWindowPos(imgui.ImVec2(getScreenResolution() / 2, select(2, getScreenResolution()) / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
     imgui.SetNextWindowSize(imgui.ImVec2(350, 280), imgui.Cond.FirstUseEver)
-    imgui.Begin(u8'Статистика добычи', WinStats, imgui.WindowFlags.NoResize)
+    imgui.Begin(u8'РЎС‚Р°С‚РёСЃС‚РёРєР° РґРѕР±С‹С‡Рё', WinStats, imgui.WindowFlags.NoResize)
     
     imgui.Spacing()
-    imgui.Text(u8'Добыто ресурсов:')
+    imgui.Text(u8'Р”РѕР±С‹С‚Рѕ СЂРµСЃСѓСЂСЃРѕРІ:')
     imgui.Spacing()
     imgui.Separator()
     imgui.Spacing()
@@ -4684,27 +5928,27 @@ imgui.OnFrame(function() return WinStats[0] end, function(player)
     imgui.Columns(2, 'stats_columns', false)
     imgui.SetColumnWidth(0, 180)
     
-    imgui.Text(u8'Камень:')
+    imgui.Text(u8'РљР°РјРµРЅСЊ:')
     imgui.NextColumn()
     imgui.Text(tostring(totalStone))
     imgui.NextColumn()
     
-    imgui.Text(u8'Металл:')
+    imgui.Text(u8'РњРµС‚Р°Р»Р»:')
     imgui.NextColumn()
     imgui.Text(tostring(totalMetal))
     imgui.NextColumn()
     
-    imgui.Text(u8'Серебро:')
+    imgui.Text(u8'РЎРµСЂРµР±СЂРѕ:')
     imgui.NextColumn()
     imgui.Text(tostring(totalSilver))
     imgui.NextColumn()
     
-    imgui.Text(u8'Бронза:')
+    imgui.Text(u8'Р‘СЂРѕРЅР·Р°:')
     imgui.NextColumn()
     imgui.Text(tostring(totalBronze))
     imgui.NextColumn()
     
-    imgui.Text(u8'Золото:')
+    imgui.Text(u8'Р—РѕР»РѕС‚Рѕ:')
     imgui.NextColumn()
     imgui.Text(tostring(totalGold))
     imgui.NextColumn()
@@ -4715,17 +5959,17 @@ imgui.OnFrame(function() return WinStats[0] end, function(player)
     imgui.Spacing()
     
     local totalMined = totalStone + totalMetal + totalSilver + totalBronze + totalGold
-    imgui.Text(u8'Всего добыто: ' .. tostring(totalMined))
+    imgui.Text(u8'Р’СЃРµРіРѕ РґРѕР±С‹С‚Рѕ: ' .. tostring(totalMined))
     local remaining = SliderInt[0] - totalMined
-    imgui.Text(u8'Осталось до цели: ' .. (remaining > 0 and tostring(remaining) or '0'))
+    imgui.Text(u8'РћСЃС‚Р°Р»РѕСЃСЊ РґРѕ С†РµР»Рё: ' .. (remaining > 0 and tostring(remaining) or '0'))
     
     imgui.Spacing()
     imgui.Separator()
     imgui.Spacing()
     
-    if imgui.Button(u8'Сбросить статистику', imgui.ImVec2(200, 30)) then 
+    if imgui.Button(u8'РЎР±СЂРѕСЃРёС‚СЊ СЃС‚Р°С‚РёСЃС‚РёРєСѓ', imgui.ImVec2(200, 30)) then 
         totalStone, totalMetal, totalSilver, totalBronze, totalGold = 0, 0, 0, 0, 0 
-        sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}Статистика сброшена!', -1)
+        sampAddChatMessage('{cc66ff}[auto-mine]: {ffffff}РЎС‚Р°С‚РёСЃС‚РёРєР° СЃР±СЂРѕС€РµРЅР°!', -1)
     end
     
     imgui.End()
