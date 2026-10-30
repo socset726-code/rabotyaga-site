@@ -4790,7 +4790,6 @@ function TH.parseText(head, allowRef)
                 local kind = f[2]
                 if kind == "str" then
                     v = v:gsub("%c", ""):sub(1, 48)
-                    if tgUtf8Clean then v = tgUtf8Clean(v) end
                     T[k] = v
                 elseif kind == "rgb" or kind == "rgba" then
                     local c = TH.unhex(v, kind == "rgba")
@@ -5267,10 +5266,12 @@ function TH_APPLY()
         TH.applyStyle()
     end)
     if not ok then print("TH_APPLY: " .. tostring(err)) end
+    print("[TH] theme init ok=" .. tostring(ok) .. " name=" .. tostring(TH.cur and TH.cur.name) .. " layout=" .. tostring(TH.cur and TH.cur.layout))
     return ok
 end
 
 function TH_DRAW(dl, p)
+    if not TH.cur then TH_APPLY() end
     if not TH.cur then return false end
     local ok, err = pcall(TH.paint, dl, p.x, p.y, GLASS.W, GLASS.H, TH.cur, GLASS.alpha, 1, os.clock())
     if not ok then
@@ -5589,10 +5590,17 @@ function TH.resetTheme()
 end
 
 function TH_FRAME(G, tabs, reveal, ctx)
+    if not TH.cur then TH_APPLY() end
     TH.depth = 0
     TH.fontPushed = false
     local ok, err = pcall(TH.frame, G, tabs, reveal, ctx)
-    if ok then return end
+    if ok then
+        if not TH.frameLogged then
+            TH.frameLogged = true
+            print("[TH] first frame ok: layout=" .. tostring(TH.cur and TH.cur.layout) .. " size=" .. tostring(G.W) .. "x" .. tostring(G.H) .. " depth=" .. tostring(TH.depth))
+        end
+        return
+    end
     while TH.depth > 0 do
         pcall(imgui.EndChild)
         TH.depth = TH.depth - 1
@@ -5663,9 +5671,11 @@ function TH.previewLayout(dl, x, y, W, H, T, mul)
         end
     end
 end
+print("[TH] engine loaded")
 -- TH_ENGINE_END
 
 local function theme()
+    if TH_APPLY and TH_APPLY() then return end
     imgui.SwitchContext()
     local ImVec4 = imgui.ImVec4
     local st = imgui.GetStyle()
@@ -7499,6 +7509,7 @@ function GLASS.hband(dl, x1, x2, y1, y2, a)
 end
 
 function GLASS.drawBackground(dl, p)
+    if TH_DRAW and TH_DRAW(dl, p) then return end
     local G = GLASS
     local V2 = imgui.ImVec2
     local c = G.c
@@ -7774,6 +7785,7 @@ end
 
 -- ---------------- вкладка: плавная подсветка активной ----------------
 function GLASS.drawTabPill(wdl, p, s, a)
+    if TH_PILL and TH_PILL(wdl, p, s, a) then return end
     local G = GLASS
     local V2 = imgui.ImVec2
     local th = currentTheme
