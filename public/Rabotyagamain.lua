@@ -4355,7 +4355,16 @@ TH.FIELDS = {
     {"gloss", "num", 0, 1}, {"glow", "num", 0, 1},
     {"panelAlpha", "num", 0, 0.9}, {"frameAlpha", "num", 0, 0.9}, {"btnAlpha", "num", 0, 0.9},
     {"frameBorder", "bool"},
-    {"tab", "enum", {pill = true, bar = true, underline = true, fill = true, none = true}},
+    {"tab", "enum", {pill = true, bar = true, underline = true, fill = true, block = true, none = true}},
+    {"layout", "enum", {side = true, rail = true, top = true, dock = true, cards = true}},
+    {"navPos", "enum", {left = true, right = true}},
+    {"navWidth", "num", 64, 260}, {"navHeight", "num", 24, 60},
+    {"winW", "num", 560, 1100}, {"winH", "num", 360, 700},
+    {"title", "str"},
+    {"titleBar", "enum", {nav = true, bar = true, none = true}},
+    {"tabBadge", "bool"}, {"navPanel", "bool"},
+    {"fontScale", "num", 0.8, 1.4}, {"density", "num", 0.6, 1.5},
+    {"edge", "enum", {none = true, top = true, left = true, bottom = true, corners = true}},
 }
 TH.FMAP = {}
 for _, f in ipairs(TH.FIELDS) do TH.FMAP[f[1]] = f end
@@ -4650,6 +4659,9 @@ function TH.base()
         borderAlpha = 0.20, borderWidth = 1.3, gloss = 1.0, glow = 0.0,
         panelAlpha = 0.045, frameAlpha = 0.07, btnAlpha = 0.09,
         frameBorder = true, tab = "pill",
+        layout = "side", navPos = "left", navWidth = 180, navHeight = 32,
+        winW = 800, winH = 500, title = "RABOTYAGA MAIN", titleBar = "nav",
+        tabBadge = false, navPanel = true, fontScale = 1.0, density = 1.0, edge = "none",
     }
 end
 
@@ -4663,38 +4675,57 @@ function TH.presets()
     local ct = currentTheme
     TH._pre = {
         P({name = u8"Жидкое стекло", accent = {ct.r, ct.g, ct.b}}),
-        P({name = u8"Полночь (плоский)", bgType = "solid", c1 = {0.045, 0.05, 0.07, 0.97},
-           accent = {0.30, 0.65, 1.0}, rounding = 10, childRound = 8, frameRound = 6,
-           borderAlpha = 0.12, borderWidth = 1, gloss = 0, blobs = 0, panelAlpha = 0.035, tab = "bar"}),
-        P({name = u8"Неон-сетка", bgType = "gradient",
+        -- как в старом скрипте: плоское тёмное окно, меню слева, зелёный акцент
+        P({name = u8"Eclipse (классика)", bgType = "solid", c1 = {0.08, 0.08, 0.08, 0.94},
+           accent = {0.0, 1.0, 0.5}, accent2 = {0.0, 1.0, 0.5}, textDim = {0.65, 0.65, 0.65},
+           panelAlpha = 0.03, frameAlpha = 0.06, btnAlpha = 0.06, borderAlpha = 0, borderWidth = 0,
+           gloss = 0, blobs = 0, rounding = 8, childRound = 8, frameRound = 6, frameBorder = false,
+           tab = "block", navWidth = 180, navHeight = 38, title = "ECLIPSE MINE"}),
+        -- узкая панель с круглыми значками, всё окно под контент
+        P({name = u8"Рейл (минимал)", bgType = "solid", c1 = {0.045, 0.05, 0.07, 0.97},
+           accent = {0.30, 0.65, 1.0}, rounding = 14, childRound = 10, frameRound = 8,
+           borderAlpha = 0.12, borderWidth = 1, gloss = 0, blobs = 0, panelAlpha = 0.035,
+           layout = "rail", navHeight = 44, winW = 780, winH = 480, tab = "fill"}),
+        -- вкладки сверху, рамка-уголки как у HUD
+        P({name = u8"Неон HUD", bgType = "gradient",
            c1 = {0.07, 0.02, 0.15, 0.96}, c2 = {0.02, 0.05, 0.18, 0.96},
            c3 = {0.03, 0.01, 0.10, 0.97}, c4 = {0.10, 0.02, 0.20, 0.97},
            pattern = "grid", patternAlpha = 0.10, patternSize = 32,
            accent = {0.0, 1.0, 0.80}, accent2 = {1.0, 0.2, 0.7}, borderColor = {0.0, 1.0, 0.80},
-           rounding = 4, childRound = 3, frameRound = 3, borderAlpha = 0.6, glow = 0.8, gloss = 0,
-           tab = "underline"}),
-        P({name = u8"Закат", bgType = "gradient",
+           rounding = 4, childRound = 3, frameRound = 3, borderAlpha = 0.45, glow = 0.7, gloss = 0,
+           layout = "top", titleBar = "bar", title = "// MINER.SYS", navHeight = 30,
+           winW = 900, winH = 520, edge = "corners", tab = "underline"}),
+        -- вкладки внизу как док, на всё окно градиент заката
+        P({name = u8"Закат (док)", bgType = "gradient",
            c1 = {0.99, 0.55, 0.35, 0.96}, c2 = {0.80, 0.25, 0.55, 0.96},
            c3 = {0.30, 0.12, 0.45, 0.97}, c4 = {0.55, 0.20, 0.40, 0.97},
            panel = {0, 0, 0}, panelAlpha = 0.22, frameAlpha = 0.22, btnAlpha = 0.25,
-           accent = {1.0, 0.85, 0.5}, accent2 = {1.0, 0.4, 0.6}, rounding = 22, gloss = 0.5, tab = "fill"}),
-        P({name = u8"Бумага (светлая)", bgType = "solid", c1 = {0.95, 0.94, 0.91, 0.98},
+           accent = {1.0, 0.85, 0.5}, accent2 = {1.0, 0.4, 0.6}, rounding = 22, gloss = 0.5,
+           layout = "dock", titleBar = "bar", title = u8"РАБОТЯГА", navHeight = 36, tabBadge = true,
+           winW = 900, winH = 520, tab = "fill"}),
+        -- светлая, меню справа, цветная полоса слева
+        P({name = u8"Бумага (меню справа)", bgType = "solid", c1 = {0.95, 0.94, 0.91, 0.98},
            text = {0.10, 0.11, 0.14}, textDim = {0.42, 0.44, 0.50},
            panel = {0, 0, 0}, panelAlpha = 0.04, frameAlpha = 0.06, btnAlpha = 0.07,
            borderColor = {0, 0, 0}, borderAlpha = 0.18, accent = {0.20, 0.42, 0.95},
-           gloss = 0, blobs = 0, rounding = 14, childRound = 10, frameRound = 8, tab = "bar"}),
+           gloss = 0, blobs = 0, rounding = 14, childRound = 10, frameRound = 8, tab = "bar",
+           navPos = "right", navWidth = 150, titleBar = "bar", edge = "left"}),
         P({name = u8"Аврора", bgType = "glass", c1 = {0.03, 0.04, 0.09, 0.94}, blobs = 2.4,
-           accent = {0.2, 0.9, 0.7}, accent2 = {0.5, 0.3, 1.0}, rounding = 26}),
-        P({name = u8"Фото (выберите картинку)", bgType = "image",
+           accent = {0.2, 0.9, 0.7}, accent2 = {0.5, 0.3, 1.0}, rounding = 26, edge = "top"}),
+        -- главный экран из плиток, как лаунчер
+        P({name = u8"Фото-лаунчер", bgType = "image",
            c1 = {0.10, 0.12, 0.22, 0.95}, c2 = {0.25, 0.10, 0.30, 0.95},
            c3 = {0.05, 0.08, 0.16, 0.95}, c4 = {0.12, 0.20, 0.30, 0.95},
            panel = {0, 0, 0}, panelAlpha = 0.42, frameAlpha = 0.30, btnAlpha = 0.30,
-           imgDim = 0.30, rounding = 18, gloss = 0.6, tab = "fill"}),
+           imgDim = 0.30, rounding = 18, gloss = 0.6, tab = "fill",
+           layout = "cards", titleBar = "bar", title = u8"Выбери раздел", winW = 860, winH = 520}),
+        -- компактное окно в стиле консоли
         P({name = u8"Терминал", bgType = "solid", c1 = {0.02, 0.05, 0.03, 0.97},
            text = {0.60, 1.0, 0.65}, textDim = {0.35, 0.60, 0.40}, accent = {0.2, 1.0, 0.3},
            borderColor = {0.2, 1.0, 0.3}, borderAlpha = 0.7, pattern = "scan", patternAlpha = 0.10,
            rounding = 0, childRound = 0, frameRound = 0, gloss = 0, blobs = 0,
-           panel = {0.2, 1.0, 0.3}, panelAlpha = 0.04, tab = "bar"}),
+           panel = {0.2, 1.0, 0.3}, panelAlpha = 0.04, tab = "bar",
+           titleBar = "bar", title = "root@miner:~#", density = 0.8, fontScale = 0.95, navWidth = 160, navHeight = 28}),
     }
     return TH._pre
 end
@@ -4747,8 +4778,9 @@ function TH.parseText(head, allowRef)
             if f then
                 local kind = f[2]
                 if kind == "str" then
-                    v = v:gsub("%c", "")
-                    T[k] = v:sub(1, 48)
+                    v = v:gsub("%c", ""):sub(1, 48)
+                    if tgUtf8Clean then v = tgUtf8Clean(v) end
+                    T[k] = v
                 elseif kind == "rgb" or kind == "rgba" then
                     local c = TH.unhex(v, kind == "rgba")
                     if c then T[k] = c end
@@ -4841,6 +4873,7 @@ end
 function TH.apply(T, key)
     TH.cur = TH.copy(T)
     TH.curKey = key or ""
+    TH.cardsOpen = false
     TH.dirty = true
     TH.applyStyle()
 end
@@ -4977,14 +5010,14 @@ function TH.applyStyle()
     local V4 = imgui.ImVec4
     local st = imgui.GetStyle()
     st.WindowPadding = imgui.ImVec2(10, 10)
-    st.FramePadding = imgui.ImVec2(10, 7)
-    st.ItemSpacing = imgui.ImVec2(8, 8)
+    st.FramePadding = imgui.ImVec2(10 * T.density, 7 * T.density)
+    st.ItemSpacing = imgui.ImVec2(8 * T.density, 8 * T.density)
     st.ItemInnerSpacing = imgui.ImVec2(6, 6)
     st.IndentSpacing = 0
     st.ScrollbarSize = 8
     st.GrabMinSize = 10
     st.WindowBorderSize = 0
-    st.ChildBorderSize = 1
+    st.ChildBorderSize = (T.borderAlpha > 0.01) and 1 or 0
     st.PopupBorderSize = 1
     st.FrameBorderSize = T.frameBorder and 1 or 0
     st.WindowRounding = T.rounding
@@ -5190,6 +5223,25 @@ function TH.paint(dl, x, y, W, H, T, mul, sc, t)
         end
     end
 
+    -- акцент по краю окна
+    if T.edge and T.edge ~= "none" then
+        local th = 3 * sc
+        local ec = col(ac[1], ac[2], ac[3], 0.9)
+        if T.edge == "top" then
+            dl:AddRectFilled(V2(x + R, y), V2(x2 - R, y + th), ec)
+        elseif T.edge == "bottom" then
+            dl:AddRectFilled(V2(x + R, y2 - th), V2(x2 - R, y2), ec)
+        elseif T.edge == "left" then
+            dl:AddRectFilled(V2(x, y + R), V2(x + th, y2 - R), ec)
+        elseif T.edge == "corners" then
+            local L, o, lw = math.min(26 * sc, W / 4), 4 * sc, math.max(1, 2 * sc)
+            for _, k in ipairs({{x + o, y + o, 1, 1}, {x2 - o, y + o, -1, 1}, {x + o, y2 - o, 1, -1}, {x2 - o, y2 - o, -1, -1}}) do
+                dl:AddLine(V2(k[1], k[2]), V2(k[1] + k[3] * L, k[2]), ec, lw)
+                dl:AddLine(V2(k[1], k[2]), V2(k[1], k[2] + k[4] * L), ec, lw)
+            end
+        end
+    end
+
     -- рамка
     if T.borderAlpha > 0.01 and T.borderWidth > 0.05 then
         local bc = T.borderColor
@@ -5246,11 +5298,331 @@ function TH_PILL(wdl, p, s, a)
     elseif T.tab == "underline" then
         wdl:AddRectFilled(p, V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], 0.08 * a), r)
         wdl:AddRectFilled(V2(p.x + 10, p.y + s.y - 3), V2(p.x + s.x - 10, p.y + s.y - 1.5), c(ac[1], ac[2], ac[3], a), 1)
+    elseif T.tab == "block" then
+        wdl:AddRectFilled(p, V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], 0.35 * a), r)
+        wdl:AddRectFilled(V2(p.x, p.y + s.y - 3), V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], a))
     elseif T.tab == "fill" then
         wdl:AddRectFilled(p, V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], 0.40 * a), r)
         wdl:AddRect(p, V2(p.x + s.x, p.y + s.y), c(ac[1], ac[2], ac[3], 0.8 * a), r, 15, 1.2)
     end
     return true
+end
+
+-- ---------------- раскладки окна ----------------
+function TH.letter(label)
+    return tostring(label):match("^[\1-\127\194-\244][\128-\191]*") or "?"
+end
+
+function TH.onAccent(G)
+    local a = TH.cur.accent
+    if 0.3 * a[1] + 0.59 * a[2] + 0.11 * a[3] > 0.62 then return G.c(0.05, 0.05, 0.08, 1) end
+    return G.c(1, 1, 1, 1)
+end
+
+-- размер окна: пока идёт вступительная анимация - 800x500, потом по теме
+function TH_SIZE()
+    local W, H = 800, 500
+    local T = TH.cur
+    if T and GLASS and GLASS.introDone and not GLASS.intro then
+        W, H = T.winW, T.winH
+    end
+    if GLASS then GLASS.W, GLASS.H = W, H end
+    return W, H
+end
+
+function TH.navChildBegin(id, x, y, w, h)
+    local T = TH.cur
+    imgui.SetCursorPos(imgui.ImVec2(x, y))
+    if not T.navPanel then imgui.PushStyleColor(imgui.Col.ChildBg, imgui.ImVec4(0, 0, 0, 0)) end
+    imgui.BeginChild(id, imgui.ImVec2(w, h), T.navPanel, imgui.WindowFlags.NoScrollWithMouse)
+    if not T.navPanel then imgui.PopStyleColor(1) end
+end
+
+-- один пункт меню; mode: side / rail / bar
+function TH.navItem(G, tab, sel, ctx, w, h, mode)
+    local T = TH.cur
+    local V2, V4 = imgui.ImVec2, imgui.ImVec4
+    local ac, pn = T.accent, T.panel
+    local isActive = (sel == tab.id)
+    local ta = G.tabA[tab.id] or 0
+    ta = ta + ((isActive and 1 or 0) - ta) * math.min(1, G.dt * 12)
+    G.tabA[tab.id] = ta
+    imgui.PushStyleColor(imgui.Col.Button, V4(pn[1], pn[2], pn[3], 0))
+    imgui.PushStyleColor(imgui.Col.ButtonHovered, V4(pn[1], pn[2], pn[3], 0.10))
+    imgui.PushStyleColor(imgui.Col.ButtonActive, V4(pn[1], pn[2], pn[3], 0.16))
+    imgui.GetStyle().FrameBorderSize = 0
+    local locked = licTabLocked(tab.id)
+    local clicked = imgui.Button("##tab" .. tab.id, V2(w, h))
+    imgui.GetStyle().FrameBorderSize = TH_FB()
+    imgui.PopStyleColor(3)
+    local hovered = imgui.IsItemHovered()
+    local p = imgui.GetItemRectMin()
+    local s = imgui.GetItemRectSize()
+    local wdl = imgui.GetWindowDrawList()
+    GLASS.drawTabPill(wdl, p, s, ta)
+    local tc = isActive and T.text or T.textDim
+    local col = G.c(tc[1], tc[2], tc[3], locked and 0.55 or 1)
+    local bx = p.x + 12
+    if T.tabBadge or mode == "rail" then
+        local rad = math.min(11, h / 2 - 3)
+        local cx = (mode == "rail") and (p.x + s.x / 2) or (p.x + 12 + rad)
+        local cy = p.y + s.y / 2
+        wdl:AddCircleFilled(V2(cx, cy), rad, G.c(ac[1], ac[2], ac[3], 0.22 + 0.60 * ta), 20)
+        local L = TH.letter(tab.label)
+        local ls = imgui.CalcTextSize(L)
+        wdl:AddText(V2(cx - ls.x / 2, cy - ls.y / 2), (ta > 0.5) and TH.onAccent(G) or col, L)
+        bx = cx + rad + 8
+    end
+    if mode ~= "rail" then
+        wdl:AddText(V2(bx + 4 * ta, p.y + (s.y - imgui.GetTextLineHeight()) / 2 - 1), col, tab.label)
+    end
+    if locked then licDrawLock(wdl, p, s) end
+    if mode == "rail" and hovered then imgui.SetTooltip(tab.label) end
+    if clicked then ctx.setSel(locked and 12 or tab.id) end
+end
+
+function TH.navSide(G, tabs, sel, ctx, x, y, w, h, rail, title)
+    local T = TH.cur
+    local V2 = imgui.ImVec2
+    local ac = T.accent
+    TH.navChildBegin("##sidebar", x, y, w, h)
+    smoothScrollBegin("side")
+    if rail then
+        imgui.SetCursorPos(V2(0, 8))
+        local p = imgui.GetCursorScreenPos()
+        local cx, cy = p.x + w / 2, p.y + 22
+        local wdl = imgui.GetWindowDrawList()
+        wdl:AddCircleFilled(V2(cx, cy), 19, G.c(ac[1], ac[2], ac[3], 0.9), 24)
+        local L = TH.letter(title)
+        local ls = imgui.CalcTextSize(L)
+        wdl:AddText(V2(cx - ls.x / 2, cy - ls.y / 2), TH.onAccent(G), L)
+        imgui.Dummy(V2(1, 46))
+    elseif T.titleBar == "nav" then
+        imgui.PushFont(titleFont)
+        local ts = imgui.CalcTextSize(title)
+        imgui.SetCursorPos(V2(math.max(8, (w - ts.x) / 2), 25))
+        imgui.TextColored(imgui.ImVec4(ac[1], ac[2], ac[3], 1.0), title)
+        imgui.PopFont()
+        imgui.Dummy(V2(0, 15))
+    else
+        imgui.Dummy(V2(0, 4))
+    end
+    for _, tab in ipairs(tabs) do
+        imgui.SetCursorPosX(8)
+        TH.navItem(G, tab, sel, ctx, w - 16, h > 0 and T.navHeight or 32, rail and "rail" or "side")
+        imgui.Dummy(V2(0, 2))
+    end
+    imgui.EndChild()
+end
+
+function TH.barRows(tabs, avail, T)
+    local info, rows, rowW = {}, 1, 0
+    for i, tab in ipairs(tabs) do
+        local iw = math.max(54, imgui.CalcTextSize(tab.label).x + 32 + (T.tabBadge and 30 or 0))
+        local brk = false
+        if rowW > 0 and rowW + 6 + iw > avail then
+            rows = rows + 1
+            rowW = 0
+            brk = true
+        end
+        info[i] = {w = iw, brk = brk}
+        rowW = rowW + (rowW > 0 and 6 or 0) + iw
+    end
+    return info, rows
+end
+
+function TH.navBar(G, tabs, info, sel, ctx, x, y, w, h, ih)
+    TH.navChildBegin("##sidebar", x, y, w, h)
+    for i, tab in ipairs(tabs) do
+        if i > 1 and not info[i].brk then imgui.SameLine(0, 6) end
+        TH.navItem(G, tab, sel, ctx, info[i].w, ih, "bar")
+    end
+    imgui.EndChild()
+end
+
+function TH.drawCards(G, tabs, ctx, cw, sel, title)
+    local T = TH.cur
+    local V2 = imgui.ImVec2
+    local ac, pn = T.accent, T.panel
+    imgui.SetCursorPos(V2(20, 18))
+    imgui.PushFont(headerFont)
+    imgui.TextColored(imgui.ImVec4(ac[1], ac[2], ac[3], 1), title)
+    imgui.PopFont()
+    local tw, th, gap = 168, 92, 12
+    local cols = math.max(1, math.floor((cw - 40 + gap) / (tw + gap)))
+    local wdl = imgui.GetWindowDrawList()
+    for i, tab in ipairs(tabs) do
+        imgui.SetCursorPos(V2(20 + ((i - 1) % cols) * (tw + gap), 58 + math.floor((i - 1) / cols) * (th + gap)))
+        local locked = licTabLocked(tab.id)
+        if imgui.InvisibleButton("##tile" .. tab.id, V2(tw, th)) then
+            ctx.setSel(locked and 12 or tab.id)
+            TH.cardsOpen = true
+        end
+        local hov = imgui.IsItemHovered()
+        local p = imgui.GetItemRectMin()
+        local on = (sel == tab.id)
+        local r = T.frameRound + 4
+        wdl:AddRectFilled(p, V2(p.x + tw, p.y + th), G.c(pn[1], pn[2], pn[3], hov and 0.16 or 0.08), r)
+        wdl:AddRect(p, V2(p.x + tw, p.y + th), G.c(ac[1], ac[2], ac[3], (hov or on) and 0.85 or 0.25), r, 15, 1.4)
+        wdl:AddCircleFilled(V2(p.x + 34, p.y + 36), 20, G.c(ac[1], ac[2], ac[3], locked and 0.25 or 0.80), 24)
+        local L = TH.letter(tab.label)
+        local ls = imgui.CalcTextSize(L)
+        wdl:AddText(V2(p.x + 34 - ls.x / 2, p.y + 36 - ls.y / 2), TH.onAccent(G), L)
+        local tc = locked and T.textDim or T.text
+        wdl:AddText(V2(p.x + 14, p.y + th - 26), G.c(tc[1], tc[2], tc[3], 1), tab.label)
+        if locked then licDrawLock(wdl, p, V2(tw, th)) end
+    end
+    imgui.SetCursorPos(V2(20, 58 + math.ceil(#tabs / cols) * (th + gap) + 4))
+    imgui.Dummy(V2(1, 1))
+end
+
+-- вся рамка окна: заголовок, меню (по раскладке) и область контента
+function TH.frame(G, tabs, reveal, ctx)
+    local T = TH.cur
+    if not T then return end
+    local V2, V4 = imgui.ImVec2, imgui.ImVec4
+    local ac = T.accent
+    local W, H = G.W, G.H
+    local lay = T.layout
+    local sel = ctx.getSel()
+    local title = (T.title ~= "") and T.title or "RABOTYAGA MAIN"
+    local barMode = (T.titleBar == "bar") or lay == "top" or lay == "dock" or lay == "cards"
+    local headH = barMode and 38 or 0
+    local wdl = imgui.GetWindowDrawList()
+    local wp = imgui.GetWindowPos()
+
+    if barMode then
+        wdl:AddRectFilled(wp, V2(wp.x + W, wp.y + headH), G.c(ac[1], ac[2], ac[3], 0.10), math.min(T.rounding, 24), 3)
+        wdl:AddRectFilled(V2(wp.x + 10, wp.y + headH - 1), V2(wp.x + W - 10, wp.y + headH + 0.5), G.c(ac[1], ac[2], ac[3], 0.45))
+        if lay ~= "cards" or TH.cardsOpen then
+            imgui.PushFont(titleFont)
+            local ts = imgui.CalcTextSize(title)
+            imgui.SetCursorPos(V2(16, (headH - ts.y) / 2))
+            imgui.TextColored(V4(ac[1], ac[2], ac[3], 1.0), title)
+            imgui.PopFont()
+        else
+            imgui.SetCursorPos(V2(16, (headH - imgui.GetTextLineHeight()) / 2))
+            imgui.TextColored(V4(ac[1], ac[2], ac[3], 1.0), "RABOTYAGA MAIN")
+        end
+        imgui.SetCursorPos(V2(W - 36, (headH - 24) / 2))
+        if imgui.InvisibleButton("##thclose", V2(24, 24)) then ctx.close() end
+        local p = imgui.GetItemRectMin()
+        local cc = G.c(T.text[1], T.text[2], T.text[3], imgui.IsItemHovered() and 1 or 0.55)
+        wdl:AddLine(V2(p.x + 7, p.y + 7), V2(p.x + 17, p.y + 17), cc, 1.8)
+        wdl:AddLine(V2(p.x + 17, p.y + 7), V2(p.x + 7, p.y + 17), cc, 1.8)
+    end
+
+    local ih = T.navHeight
+    local navW = (lay == "rail") and 64 or T.navWidth
+    local top = 10 + headH
+    local innerH = H - 10 - top
+    local gap = 8
+    local cx, cy, cw, chh
+
+    if lay == "side" or lay == "rail" then
+        local right = (T.navPos == "right")
+        TH.navSide(G, tabs, sel, ctx, right and (W - 10 - navW) or 10, top, navW, innerH, lay == "rail", title)
+        cx, cy, cw, chh = right and 10 or (10 + navW + gap), top, W - 20 - navW - gap, innerH
+    elseif lay == "top" or lay == "dock" then
+        local info, rows = TH.barRows(tabs, W - 44, T)
+        local nh = rows * (ih + 8) + 14
+        if lay == "top" then
+            TH.navBar(G, tabs, info, sel, ctx, 10, top, W - 20, nh, ih)
+            cx, cy, cw, chh = 10, top + nh + gap, W - 20, innerH - nh - gap
+        else
+            TH.navBar(G, tabs, info, sel, ctx, 10, H - 10 - nh, W - 20, nh, ih)
+            cx, cy, cw, chh = 10, top, W - 20, innerH - nh - gap
+        end
+    else
+        cx, cy, cw, chh = 10, top, W - 20, innerH
+        if TH.cardsOpen then
+            TH.navChildBegin("##cardsbar", 10, top, W - 20, 46)
+            if imgui.Button(u8"< Назад##thback", V2(100, 26)) then TH.cardsOpen = false end
+            imgui.SameLine()
+            for _, tab in ipairs(tabs) do
+                if tab.id == sel then
+                    imgui.TextColored(V4(ac[1], ac[2], ac[3], 1.0), tab.label)
+                end
+            end
+            imgui.EndChild()
+            cy, chh = top + 46 + gap, innerH - 46 - gap
+        end
+    end
+
+    imgui.SetCursorPos(V2(cx, cy))
+    imgui.BeginChild("##content", V2(cw, chh), true, imgui.WindowFlags.NoScrollWithMouse)
+    smoothScrollBegin("content")
+    imgui.PushFont(mainFont)
+    if imgui.SetWindowFontScale then imgui.SetWindowFontScale(T.fontScale) end
+    if lay == "cards" and not TH.cardsOpen then
+        TH.drawCards(G, tabs, ctx, cw, sel, title)
+    else
+        ctx.content()
+    end
+    imgui.PopFont()
+    imgui.EndChild()
+    imgui.Dummy(V2(1, 1))
+end
+
+function TH_FRAME(G, tabs, reveal, ctx)
+    local ok, err = pcall(TH.frame, G, tabs, reveal, ctx)
+    if not ok and not TH.frameErr then
+        TH.frameErr = true
+        print("TH.frame: " .. tostring(err))
+    end
+end
+
+-- мини-схема раскладки поверх превью темы в библиотеке
+function TH.previewLayout(dl, x, y, W, H, T, mul)
+    local V2 = imgui.ImVec2
+    local U32 = imgui.ColorConvertFloat4ToU32
+    local ac, pn = T.accent, T.panel
+    local function A(a) return U32(imgui.ImVec4(ac[1], ac[2], ac[3], math.min(1, a * mul))) end
+    local function P(a) return U32(imgui.ImVec4(pn[1], pn[2], pn[3], math.min(1, a * mul))) end
+    local function box(x1, y1, x2, y2) dl:AddRectFilled(V2(x1, y1), V2(x2, y2), P(0.30), 2) end
+    local lay, m = T.layout, 6
+    local l, r, t, b = x + m, x + W - m, y + m, y + H - m
+    if (T.titleBar == "bar") or lay == "top" or lay == "dock" or lay == "cards" then
+        dl:AddRectFilled(V2(l, t), V2(r, t + 6), A(0.55), 2)
+        t = t + 9
+    end
+    if lay == "side" or lay == "rail" then
+        local nw = (lay == "rail") and W * 0.10 or W * 0.24
+        local nx1, nx2, cx1, cx2
+        if T.navPos == "right" and lay == "side" then
+            nx1, nx2, cx1, cx2 = r - nw, r, l, r - nw - 3
+        else
+            nx1, nx2, cx1, cx2 = l, l + nw, l + nw + 3, r
+        end
+        box(nx1, t, nx2, b)
+        box(cx1, t, cx2, b)
+        for i = 0, 3 do
+            if lay == "rail" then
+                dl:AddCircleFilled(V2((nx1 + nx2) / 2, t + 6 + i * 8), 2.5, A(i == 0 and 0.9 or 0.4), 8)
+            else
+                dl:AddRectFilled(V2(nx1 + 3, t + 4 + i * 7), V2(nx2 - 3, t + 7 + i * 7), A(i == 0 and 0.8 or 0.35), 1)
+            end
+        end
+    elseif lay == "top" or lay == "dock" then
+        local sy1, sy2, cy1, cy2
+        if lay == "top" then
+            sy1, sy2, cy1, cy2 = t, t + 9, t + 12, b
+        else
+            sy1, sy2, cy1, cy2 = b - 9, b, t, b - 12
+        end
+        box(l, sy1, r, sy2)
+        box(l, cy1, r, cy2)
+        for i = 0, 3 do
+            dl:AddRectFilled(V2(l + 3 + i * 14, sy1 + 3), V2(l + 13 + i * 14, sy2 - 3), A(i == 0 and 0.8 or 0.35), 1)
+        end
+    else
+        local tw, th = (r - l - 6) / 3, (b - t - 3) / 2
+        for i = 0, 5 do
+            local tx, ty = l + (i % 3) * (tw + 3), t + math.floor(i / 3) * (th + 3)
+            box(tx, ty, tx + tw, ty + th)
+            dl:AddCircleFilled(V2(tx + 7, ty + 7), 3, A(0.7), 8)
+        end
+    end
 end
 -- TH_ENGINE_END
 
@@ -5543,6 +5915,7 @@ function TH.uiInit()
         name = imgui.new.char[64](),
         path = imgui.new.char[300](),
         imgPath = imgui.new.char[300](),
+        title = imgui.new.char[64](),
         lastName = nil, imgs = nil,
     }
 end
@@ -5673,6 +6046,12 @@ function TH.renderTab()
         ffi.copy(ui.name, T.name:sub(1, 60))
     end
 
+    if ui.lastTitle ~= T.title then
+        ui.lastTitle = T.title
+        ffi.fill(ui.title, ffi.sizeof(ui.title), 0)
+        ffi.copy(ui.title, T.title:sub(1, 60))
+    end
+
     imgui.SetCursorPos(imgui.ImVec2(20, 20))
     imgui.BeginGroup()
 
@@ -5690,6 +6069,7 @@ function TH.renderTab()
         local p = imgui.GetCursorScreenPos()
         if imgui.InvisibleButton("##thprev" .. i, imgui.ImVec2(112, 70)) then pendingApply = i end
         TH.paint(imgui.GetWindowDrawList(), p.x, p.y, 112, 70, e.T, mul, 112 / 800, os.clock())
+        TH.previewLayout(imgui.GetWindowDrawList(), p.x, p.y, 112, 70, e.T, mul)
         imgui.SameLine()
         imgui.BeginGroup()
         local active = (TH.curKey == key)
@@ -5771,6 +6151,37 @@ function TH.renderTab()
     local open = 0
     pcall(function() open = imgui.TreeNodeFlags.DefaultOpen end)
 
+    if imgui.CollapsingHeader(u8"Раскладка окна", open) then
+        TH.uiChoice(u8"Как устроено меню:", "layout", {
+            {"side", u8"Боковое"}, {"rail", u8"Рейл"}, {"top", u8"Сверху"}, {"dock", u8"Снизу"}, {"cards", u8"Плитки"}})
+        if T.layout == "side" or T.layout == "rail" then
+            TH.uiChoice(u8"Сторона:", "navPos", {{"left", u8"Слева"}, {"right", u8"Справа"}})
+        end
+        if T.layout == "side" then TH.uiSlider(u8"Ширина меню", "navWidth", 120, 260, "%.0f") end
+        if T.layout ~= "cards" then TH.uiSlider(u8"Высота пунктов меню", "navHeight", 24, 60, "%.0f") end
+        TH.uiSlider(u8"Ширина окна", "winW", 560, 1100, "%.0f")
+        TH.uiSlider(u8"Высота окна", "winH", 360, 700, "%.0f")
+        TH.uiSlider(u8"Размер шрифта", "fontScale", 0.8, 1.4)
+        TH.uiSlider(u8"Плотность (отступы)", "density", 0.6, 1.5)
+        imgui.Text(u8"Заголовок окна:")
+        if imgui.InputText("##thtitle", ui.title, ffi.sizeof(ui.title)) then
+            T.title = ffi.string(ui.title)
+            ui.lastTitle = T.title
+            TH.touch()
+        end
+        TH.uiChoice(u8"Где заголовок:", "titleBar", {{"nav", u8"В меню"}, {"bar", u8"Полоса сверху"}, {"none", u8"Скрыт"}})
+        if imgui.Checkbox(u8"Круглые значки-буквы у пунктов меню", imgui.new.bool(T.tabBadge)) then
+            T.tabBadge = not T.tabBadge
+            TH.touch()
+        end
+        if imgui.Checkbox(u8"Отдельная панель под меню", imgui.new.bool(T.navPanel)) then
+            T.navPanel = not T.navPanel
+            TH.touch()
+        end
+        TH.uiChoice(u8"Акцент по краю окна:", "edge", {
+            {"none", u8"Нет"}, {"top", u8"Сверху"}, {"left", u8"Слева"}, {"bottom", u8"Снизу"}, {"corners", u8"Уголки"}})
+    end
+
     if imgui.CollapsingHeader(u8"Фон", open) then
         TH.uiChoice(u8"Тип фона:", "bgType", {
             {"glass", u8"Стекло"}, {"solid", u8"Сплошной"}, {"gradient", u8"Градиент"}, {"image", u8"Картинка"}})
@@ -5839,7 +6250,7 @@ function TH.renderTab()
     if imgui.CollapsingHeader(u8"Вкладки слева") then
         TH.uiChoice(u8"Стиль выделения вкладки:", "tab", {
             {"pill", u8"Капсула"}, {"bar", u8"Полоса"}, {"underline", u8"Подчёркивание"},
-            {"fill", u8"Заливка"}, {"none", u8"Без выделения"}})
+            {"fill", u8"Заливка"}, {"block", u8"Заливка + полоса"}, {"none", u8"Без выделения"}})
     end
 
     imgui.Dummy(imgui.ImVec2(0, 8))
@@ -7341,7 +7752,7 @@ local newFrame = imgui.OnFrame(
         local G = GLASS
         local screenW, screenH = getScreenResolution()
         imgui.SetNextWindowPos(imgui.ImVec2(screenW / 2, screenH / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(800, 500), imgui.Cond.FirstUseEver)
+        imgui.SetNextWindowSize(imgui.ImVec2(TH_SIZE()), imgui.Cond.Always)
 
         -- плавное появление при каждом открытии
         local now = os.clock()
@@ -7379,21 +7790,6 @@ local newFrame = imgui.OnFrame(
             G.alpha = G.fade * reveal
             imgui.GetStyle().Alpha = math.max(0.01, G.fade * reveal)
 
-            local sidebarWidth = 180
-            local contentWidth = 800 - sidebarWidth - 15
-
-            imgui.SetCursorPos(imgui.ImVec2(10, 10))
-            imgui.BeginChild("##sidebar", imgui.ImVec2(sidebarWidth, 500 - 20), true, imgui.WindowFlags.NoScrollWithMouse)
-            smoothScrollBegin("side")
-
-            imgui.PushFont(titleFont)
-            local titleSize = imgui.CalcTextSize("RABOTYAGA MAIN")
-            imgui.SetCursorPos(imgui.ImVec2((sidebarWidth - titleSize.x) / 2, 25))
-            imgui.TextColored(accent(1.0), "RABOTYAGA MAIN")
-            imgui.PopFont()
-
-            imgui.Dummy(imgui.ImVec2(0, 15))
-
             local tabs = {
                 {id = 1, label = u8"Основное"},
                 {id = 2, label = u8"Приоритет"},
@@ -7408,53 +7804,11 @@ local newFrame = imgui.OnFrame(
                 {id = 11, label = u8"ИИ пути"},
                 {id = 12, label = u8"Подписка"}
             }
-
-            for _, tab in ipairs(tabs) do
-                local isActive = (selectedTab == tab.id)
-                local ta = G.tabA[tab.id] or 0
-                ta = ta + ((isActive and 1 or 0) - ta) * math.min(1, G.dt * 12)
-                G.tabA[tab.id] = ta
-
-                imgui.SetCursorPosX(8)
-
-                imgui.PushStyleColor(imgui.Col.Button, imgui.ImVec4(1, 1, 1, 0))
-                imgui.PushStyleColor(imgui.Col.ButtonHovered, imgui.ImVec4(1, 1, 1, 0.08))
-                imgui.PushStyleColor(imgui.Col.ButtonActive, imgui.ImVec4(1, 1, 1, 0.14))
-                imgui.GetStyle().FrameBorderSize = 0
-
-                local locked = licTabLocked(tab.id)
-                if imgui.Button("##tab" .. tab.id, imgui.ImVec2(sidebarWidth - 16, 32)) then
-                    selectedTab = locked and 12 or tab.id
-                end
-
-                imgui.GetStyle().FrameBorderSize = 1
-
-                local p = imgui.GetItemRectMin()
-                local s = imgui.GetItemRectSize()
-                local wdl = imgui.GetWindowDrawList()
-
-                G.drawTabPill(wdl, p, s, ta)
-
-                imgui.SetCursorScreenPos(imgui.ImVec2(p.x + 14 + 4 * ta, p.y + (s.y - imgui.GetTextLineHeight()) / 2 - 1))
-
-                local textColor = TH_TEXT(false)
-                if isActive then textColor = TH_TEXT(true) end
-                if locked then textColor = imgui.ImVec4(0.52, 0.47, 0.58, 1.0) end
-                imgui.TextColored(textColor, tab.label)
-                if locked then licDrawLock(wdl, p, s) end
-
-                imgui.PopStyleColor(3)
-                imgui.Dummy(imgui.ImVec2(0, 2))
-            end
-
-            imgui.EndChild()
-            imgui.SameLine()
-
-            imgui.BeginChild("##content", imgui.ImVec2(contentWidth, 500 - 20), true, imgui.WindowFlags.NoScrollWithMouse)
-            smoothScrollBegin("content")
-
-            imgui.PushFont(mainFont)
-
+            TH_FRAME(G, tabs, reveal, {
+                getSel = function() return selectedTab end,
+                setSel = function(v) selectedTab = v end,
+                close = function() WinState[0] = false end,
+                content = function()
             if licTabLocked(selectedTab) then selectedTab = 12 end
             if selectedTab == 1 then
                 renderMainTab()
@@ -7481,9 +7835,8 @@ local newFrame = imgui.OnFrame(
             elseif selectedTab == 12 then
                 renderLicTab()
             end
-
-            imgui.PopFont()
-            imgui.EndChild()
+                end,
+            })
         end
 
         imgui.End()
