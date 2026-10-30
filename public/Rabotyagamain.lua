@@ -4336,7 +4336,7 @@ TH = {
     DIR = getWorkingDirectory() .. "\\config\\rabotyaga_themes\\",
     cur = nil, curKey = "", list = nil,
     dirty = false, tex = {}, texCount = 0,
-    msg = nil, msgOk = true,
+    msg = nil, msgOk = true, depth = 0, fontPushed = false,
 }
 
 TH.FIELDS = {
@@ -4397,6 +4397,17 @@ function TH.copy(T)
         end
     end
     return o
+end
+
+function TH.BC(...)
+    local r = imgui.BeginChild(...)
+    TH.depth = TH.depth + 1
+    return r
+end
+
+function TH.EC()
+    imgui.EndChild()
+    TH.depth = TH.depth - 1
 end
 
 function TH.say(ok, text)
@@ -5251,10 +5262,11 @@ end
 
 -- ---------------- хуки для основного скрипта ----------------
 function TH_APPLY()
-    local ok = pcall(function()
+    local ok, err = pcall(function()
         TH.ensure()
         TH.applyStyle()
     end)
+    if not ok then print("TH_APPLY: " .. tostring(err)) end
     return ok
 end
 
@@ -5322,11 +5334,13 @@ end
 -- размер окна: пока идёт вступительная анимация - 800x500, потом по теме
 function TH_SIZE()
     local W, H = 800, 500
-    local T = TH.cur
-    if T and GLASS and GLASS.introDone and not GLASS.intro then
-        W, H = T.winW, T.winH
-    end
-    if GLASS then GLASS.W, GLASS.H = W, H end
+    pcall(function()
+        local T = TH.cur
+        if T and GLASS and GLASS.introDone and not GLASS.intro then
+            W, H = T.winW, T.winH
+        end
+        if GLASS then GLASS.W, GLASS.H = W, H end
+    end)
     return W, H
 end
 
@@ -5334,7 +5348,7 @@ function TH.navChildBegin(id, x, y, w, h)
     local T = TH.cur
     imgui.SetCursorPos(imgui.ImVec2(x, y))
     if not T.navPanel then imgui.PushStyleColor(imgui.Col.ChildBg, imgui.ImVec4(0, 0, 0, 0)) end
-    imgui.BeginChild(id, imgui.ImVec2(w, h), T.navPanel, imgui.WindowFlags.NoScrollWithMouse)
+    TH.BC(id, imgui.ImVec2(w, h), T.navPanel, imgui.WindowFlags.NoScrollWithMouse)
     if not T.navPanel then imgui.PopStyleColor(1) end
 end
 
@@ -5412,7 +5426,7 @@ function TH.navSide(G, tabs, sel, ctx, x, y, w, h, rail, title)
         TH.navItem(G, tab, sel, ctx, w - 16, h > 0 and T.navHeight or 32, rail and "rail" or "side")
         imgui.Dummy(V2(0, 2))
     end
-    imgui.EndChild()
+    TH.EC()
 end
 
 function TH.barRows(tabs, avail, T)
@@ -5437,7 +5451,7 @@ function TH.navBar(G, tabs, info, sel, ctx, x, y, w, h, ih)
         if i > 1 and not info[i].brk then imgui.SameLine(0, 6) end
         TH.navItem(G, tab, sel, ctx, info[i].w, ih, "bar")
     end
-    imgui.EndChild()
+    TH.EC()
 end
 
 function TH.drawCards(G, tabs, ctx, cw, sel, title)
@@ -5544,15 +5558,16 @@ function TH.frame(G, tabs, reveal, ctx)
                     imgui.TextColored(V4(ac[1], ac[2], ac[3], 1.0), tab.label)
                 end
             end
-            imgui.EndChild()
+            TH.EC()
             cy, chh = top + 46 + gap, innerH - 46 - gap
         end
     end
 
     imgui.SetCursorPos(V2(cx, cy))
-    imgui.BeginChild("##content", V2(cw, chh), true, imgui.WindowFlags.NoScrollWithMouse)
+    TH.BC("##content", V2(cw, chh), true, imgui.WindowFlags.NoScrollWithMouse)
     smoothScrollBegin("content")
     imgui.PushFont(mainFont)
+    TH.fontPushed = true
     if imgui.SetWindowFontScale then imgui.SetWindowFontScale(T.fontScale) end
     if lay == "cards" and not TH.cardsOpen then
         TH.drawCards(G, tabs, ctx, cw, sel, title)
@@ -5560,16 +5575,40 @@ function TH.frame(G, tabs, reveal, ctx)
         ctx.content()
     end
     imgui.PopFont()
-    imgui.EndChild()
+    TH.fontPushed = false
+    TH.EC()
     imgui.Dummy(V2(1, 1))
 end
 
+function TH.resetTheme()
+    pcall(os.remove, TH.DIR .. "_current.rmtheme")
+    TH.cur = TH.copy(TH.presets()[1])
+    TH.curKey = ""
+    TH.frameErr = nil
+    TH.applyStyle()
+end
+
 function TH_FRAME(G, tabs, reveal, ctx)
+    TH.depth = 0
+    TH.fontPushed = false
     local ok, err = pcall(TH.frame, G, tabs, reveal, ctx)
-    if not ok and not TH.frameErr then
-        TH.frameErr = true
-        print("TH.frame: " .. tostring(err))
+    if ok then return end
+    while TH.depth > 0 do
+        pcall(imgui.EndChild)
+        TH.depth = TH.depth - 1
     end
+    if TH.fontPushed then pcall(imgui.PopFont); TH.fontPushed = false end
+    err = tostring(err)
+    if TH.frameErr ~= err then
+        TH.frameErr = err
+        print("TH.frame: " .. err)
+    end
+    imgui.SetCursorPos(imgui.ImVec2(20, 20))
+    imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(1.0, 0.45, 0.4, 1.0))
+    imgui.TextWrapped(u8"Ошибка оформления (покажите этот текст разработчику):")
+    imgui.TextWrapped(err)
+    imgui.PopStyleColor(1)
+    if imgui.Button(u8"Сбросить тему##threset", imgui.ImVec2(200, 30)) then TH.resetTheme() end
 end
 
 -- мини-схема раскладки поверх превью темы в библиотеке
@@ -6061,7 +6100,7 @@ function TH.renderTab()
     -- ---------- библиотека ----------
     imgui.Dummy(imgui.ImVec2(0, 4))
     imgui.Text(u8"Библиотека тем (клик по картинке или кнопка - применить):")
-    imgui.BeginChild("##thlist", imgui.ImVec2(-1, 230), true)
+    TH.BC("##thlist", imgui.ImVec2(-1, 230), true)
     local mul = GLASS and GLASS.alpha or 1
     local pendingApply, pendingDel
     for i, e in ipairs(TH.list) do
@@ -6086,7 +6125,7 @@ function TH.renderTab()
         imgui.EndGroup()
         imgui.Dummy(imgui.ImVec2(0, 2))
     end
-    imgui.EndChild()
+    TH.EC()
     if pendingApply then
         local e = TH.list[pendingApply]
         TH.apply(e.T, e.builtin and ("builtin:" .. e.id) or ("file:" .. e.file))
